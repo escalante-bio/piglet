@@ -1,0 +1,13 @@
+[package]
+name = "piglet"
+categories = ["network-programming", "science::robotics"]
+description = "A library for controlling IP-based Hamilton robots"
+license = "Apache-2.0"
+readme = "../README.md"
+repository = "https://github.com/escalante-bio/piglet"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+piglet_client = { path = "../piglet_client", version = "0.1.0" }
+piglet_generated = { path = "../piglet_generated/", version = "0.1.0" }

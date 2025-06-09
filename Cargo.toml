@@ -1,0 +1,4 @@
+[workspace]
+members = [ "piglet","piglet_client", "piglet_codegen", "piglet_generated"]
+resolver = "3"
+
