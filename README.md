@@ -2,6 +2,9 @@
 
 `piglet` is a Rust library designed to control IP-based Hamilton robots.
 
+This project is an independent, open-source initiative and is not affiliated with, endorsed by, or
+supported by Hamilton. Use it at your own risk.
+
 ## Compatibility
 
 While `piglet` has been primarily tested with a Nimbus HD (2021), it is easily extendable to the
@@ -11,10 +14,9 @@ different and fall outside the current scope of this project.
 ## Current state
 
 * [ ] Test extensively and flesh out the missing pieces
-* [ ] Add support for other Nimbuses
-* [ ] Add support for ML Prep
+* [ ] Generate code for other Nimbuses and iSWAP
+* [ ] Generate code for ML Preps
 * [ ] Add support for discovering robots on the network
-* [ ] Learn Rust
 
 ## Example usage
 
@@ -45,7 +47,7 @@ async fn main() -> Result<(), anyhow::Error> {
     core.method_begin().await?;
     println!("{:?}", deck.get_track_sensor_states().await?);
     println!("{:?}", pipette.get_tip_and_needle_types().await?);
-    for channel in range 1..9 {
+    for channel in 1..=8 {
         pipette
             .set_channel_configuration(channel, vec![1, 3, 4], vec![true, false, false])
             .await?;
@@ -83,5 +85,7 @@ To generate API bindings:
    ./target/release/piglet_codegen <robot ip and port> <module name>
    ```
 
-As an example, the `piglet_generated/src/nimbus_hd_1_0` folder in this repository was generated
-from our Nimbus HD by running `piglet_codegen 172.31.255.3:2000 nimbus_hd_1_0`
+As an example, the
+[`nimbus_hd_1_0`](https://github.com/escalante-bio/piglet/tree/main/piglet_generated/src/nimbus_hd_1_0)
+folder in this repository was generated from our Nimbus HD by running
+`piglet_codegen 172.31.255.3:2000 nimbus_hd_1_0`
