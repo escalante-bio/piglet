@@ -31,6 +31,32 @@ impl NimbusCoreBarcodeScanner0 {
         }
     }
 
+    pub async fn is_scanner_1_present(&self) -> Result</* present= */ bool, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 1, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let present = bool::deserialize(&mut stream)?;
+        Ok(present)
+    }
+
+    pub async fn is_scanner_2_present(&self) -> Result</* present= */ bool, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 2, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let present = bool::deserialize(&mut stream)?;
+        Ok(present)
+    }
+
     pub async fn get_run_time(&self) -> Result</* ms_run_time= */ u32, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
@@ -44,69 +70,17 @@ impl NimbusCoreBarcodeScanner0 {
         Ok(ms_run_time)
     }
 
-    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
-        let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
-        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(EnumInfoReply {
-            enumeration_names,
-            number_enumeration_values,
-            enumeration_values,
-            enumeration_value_descriptions,
-        })
-    }
-
-    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
+    pub async fn buddy_test_method(&self) -> Result</* position= */ i32, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
-        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
-        Ok(InterfaceDescriptorsReply {
-            interface_ids,
-            interface_descriptors,
-        })
-    }
-
-    pub async fn get_hardware_version(&self) -> Result</* value= */ u8, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 6, args.freeze())
+            .act(&self.address, 1, 0, 4, args.freeze())
             .await?;
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        let value = u8::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn is_scanner_1_present(&self) -> Result</* present= */ bool, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 1, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let present = bool::deserialize(&mut stream)?;
-        Ok(present)
+        let position = i32::deserialize(&mut stream)?;
+        Ok(position)
     }
 
     pub async fn set_buddy_test_seed_value(&self, position_seed: i32) -> Result<(), Error> {
@@ -122,17 +96,38 @@ impl NimbusCoreBarcodeScanner0 {
         Ok(())
     }
 
-    pub async fn is_scanner_2_present(&self) -> Result</* present= */ bool, Error> {
+    pub async fn get_hardware_version(&self) -> Result</* value= */ u8, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 0, 2, args.freeze())
+            .act(&self.address, 1, 0, 6, args.freeze())
             .await?;
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        let present = bool::deserialize(&mut stream)?;
-        Ok(present)
+        let value = u8::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 1, args.freeze())
+            .await?;
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        }
+        let name = String::deserialize(&mut stream)?;
+        let version = String::deserialize(&mut stream)?;
+        let methods = u32::deserialize(&mut stream)?;
+        let subobjects = u16::deserialize(&mut stream)?;
+        Ok(ObjectInfoReply {
+            name,
+            version,
+            methods,
+            subobjects,
+        })
     }
 
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
@@ -161,27 +156,6 @@ impl NimbusCoreBarcodeScanner0 {
         })
     }
 
-    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let name = String::deserialize(&mut stream)?;
-        let version = String::deserialize(&mut stream)?;
-        let methods = u32::deserialize(&mut stream)?;
-        let subobjects = u16::deserialize(&mut stream)?;
-        Ok(ObjectInfoReply {
-            name,
-            version,
-            methods,
-            subobjects,
-        })
-    }
-
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
@@ -199,6 +173,45 @@ impl NimbusCoreBarcodeScanner0 {
             module_id,
             node_id,
             object_id,
+        })
+    }
+
+    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 4, args.freeze())
+            .await?;
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        }
+        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
+        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
+        Ok(InterfaceDescriptorsReply {
+            interface_ids,
+            interface_descriptors,
+        })
+    }
+
+    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
+        let mut args = BytesMut::new();
+        interface_id.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 5, args.freeze())
+            .await?;
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        }
+        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
+        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(EnumInfoReply {
+            enumeration_names,
+            number_enumeration_values,
+            enumeration_values,
+            enumeration_value_descriptions,
         })
     }
 
@@ -223,33 +236,14 @@ impl NimbusCoreBarcodeScanner0 {
             structure_element_descriptions,
         })
     }
-
-    pub async fn buddy_test_method(&self) -> Result</* position= */ i32, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 4, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let position = i32::deserialize(&mut stream)?;
-        Ok(position)
-    }
 }
 
 #[derive(Clone, Debug)]
-pub struct EnumInfoReply {
-    enumeration_names: Vec<String>,
-    number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
-    enumeration_value_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct InterfaceDescriptorsReply {
-    interface_ids: Vec<u8>,
-    interface_descriptors: Vec<String>,
+pub struct ObjectInfoReply {
+    name: String,
+    version: String,
+    methods: u32,
+    subobjects: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -263,18 +257,24 @@ pub struct MethodInfoReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct ObjectInfoReply {
-    name: String,
-    version: String,
-    methods: u32,
-    subobjects: u16,
-}
-
-#[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
     node_id: u16,
     object_id: u16,
+}
+
+#[derive(Clone, Debug)]
+pub struct InterfaceDescriptorsReply {
+    interface_ids: Vec<u8>,
+    interface_descriptors: Vec<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnumInfoReply {
+    enumeration_names: Vec<String>,
+    number_enumeration_values: Vec<u32>,
+    enumeration_values: Vec<i32>,
+    enumeration_value_descriptions: Vec<String>,
 }
 
 #[derive(Clone, Debug)]

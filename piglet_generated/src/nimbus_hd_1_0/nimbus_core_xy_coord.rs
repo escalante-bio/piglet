@@ -31,23 +31,33 @@ impl NimbusCoreXyCoord {
         }
     }
 
-    pub async fn on_the_fly_dispense(
+    pub async fn initialize_xy(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        tips_used.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 1, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn move_xy_absolute(
         &self,
+
         tips_used: Vec<u16>,
         x_position: i32,
-        acceleration: u32,
-        velocity: u32,
-        times: Vec<u32>,
+        y_position: Vec<i32>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         tips_used.serialize(&mut args);
         x_position.serialize(&mut args);
-        acceleration.serialize(&mut args);
-        velocity.serialize(&mut args);
-        times.serialize(&mut args);
+        y_position.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 16, args.freeze())
+            .act(&self.address, 1, 3, 2, args.freeze())
             .await?;
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
@@ -57,6 +67,7 @@ impl NimbusCoreXyCoord {
 
     pub async fn move_xy_absolute_plate(
         &self,
+
         tips_used: Vec<u16>,
         gripper_tips_used: Vec<u16>,
         x_position: i32,
@@ -79,8 +90,60 @@ impl NimbusCoreXyCoord {
         Ok(())
     }
 
+    pub async fn initialize_x(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 4, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn move_x_absolute(&self, x_position: i32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        x_position.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 5, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn move_x_relative_1(&self, x_distance: i32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        x_distance.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 6, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn move_x_relative_2(&self, x_distance: i32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        x_distance.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 6, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
     pub async fn move_x_absolute_speed(
         &self,
+
         x_position: i32,
         acceleration: u32,
         velocity: u32,
@@ -92,6 +155,19 @@ impl NimbusCoreXyCoord {
         let (count, mut stream) = self
             .robot
             .act(&self.address, 1, 3, 7, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn set_x_calibration(&self, x_offset: i32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        x_offset.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 8, args.freeze())
             .await?;
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
@@ -112,6 +188,19 @@ impl NimbusCoreXyCoord {
         Ok(GetXCalibrationReply { x_offset })
     }
 
+    pub async fn set_x_indication_enable(&self, enable: bool) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        enable.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 10, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
     pub async fn get_x_indication_enable(&self) -> Result</* enable= */ bool, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
@@ -125,49 +214,17 @@ impl NimbusCoreXyCoord {
         Ok(enable)
     }
 
-    pub async fn move_xy_absolute(
-        &self,
-        tips_used: Vec<u16>,
-        x_position: i32,
-        y_position: Vec<i32>,
-    ) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn initialize_x(&self) -> Result<(), Error> {
+    pub async fn is_x_initialized(&self) -> Result<IsXInitializedReply, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 4, args.freeze())
+            .act(&self.address, 1, 0, 12, args.freeze())
             .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        Ok(())
-    }
-
-    pub async fn initialize_xy(&self, tips_used: Vec<u16>) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 1, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
+        let initialized = bool::deserialize(&mut stream)?;
+        Ok(IsXInitializedReply { initialized })
     }
 
     pub async fn get_desired_position(&self) -> Result<GetDesiredPositionReply, Error> {
@@ -180,15 +237,95 @@ impl NimbusCoreXyCoord {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
         let x_position = i32::deserialize(&mut stream)?;
-        let y_position = Vec::<i16>::deserialize(&mut stream)?;
+        let y_position = Vec::<i32>::deserialize(&mut stream)?;
         Ok(GetDesiredPositionReply {
             x_position,
             y_position,
         })
     }
 
+    pub async fn get_settling_parameters(&self) -> Result<GetSettlingParametersReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 14, args.freeze())
+            .await?;
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        }
+        let time = u16::deserialize(&mut stream)?;
+        let time_limit = u16::deserialize(&mut stream)?;
+        Ok(GetSettlingParametersReply { time, time_limit })
+    }
+
+    pub async fn set_settling_parameters(&self, time: u16, time_limit: u16) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        time.serialize(&mut args);
+        time_limit.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 15, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn on_the_fly_dispense(
+        &self,
+
+        tips_used: Vec<u16>,
+        x_position: i32,
+        acceleration: u32,
+        velocity: u32,
+        times: Vec<u32>,
+    ) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        tips_used.serialize(&mut args);
+        x_position.serialize(&mut args);
+        acceleration.serialize(&mut args);
+        velocity.serialize(&mut args);
+        times.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 16, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn set_core_gripper_max_y_velocity(&self, y_velocity: u16) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        y_velocity.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 17, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_core_gripper_max_y_velocity(&self) -> Result</* y_velocity= */ u16, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 18, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let y_velocity = u16::deserialize(&mut stream)?;
+        Ok(y_velocity)
+    }
+
     pub async fn move_y_relative(
         &self,
+
         tips_used: Vec<u16>,
         y_distance: Vec<i32>,
     ) -> Result<(), Error> {
@@ -203,6 +340,65 @@ impl NimbusCoreXyCoord {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
         Ok(())
+    }
+
+    pub async fn set_x_velocity_scale(&self, scale: u16) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        scale.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 21, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_x_velocity_scale(&self) -> Result</* scale= */ u16, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 22, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let scale = u16::deserialize(&mut stream)?;
+        Ok(scale)
+    }
+
+    pub async fn unlock(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 23, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 1, args.freeze())
+            .await?;
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        }
+        let name = String::deserialize(&mut stream)?;
+        let version = String::deserialize(&mut stream)?;
+        let methods = u32::deserialize(&mut stream)?;
+        let subobjects = u16::deserialize(&mut stream)?;
+        Ok(ObjectInfoReply {
+            name,
+            version,
+            methods,
+            subobjects,
+        })
     }
 
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
@@ -251,6 +447,23 @@ impl NimbusCoreXyCoord {
         })
     }
 
+    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 4, args.freeze())
+            .await?;
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        }
+        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
+        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
+        Ok(InterfaceDescriptorsReply {
+            interface_ids,
+            interface_descriptors,
+        })
+    }
+
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
@@ -263,7 +476,7 @@ impl NimbusCoreXyCoord {
         }
         let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
         let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
         let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
         Ok(EnumInfoReply {
             enumeration_names,
@@ -271,111 +484,6 @@ impl NimbusCoreXyCoord {
             enumeration_values,
             enumeration_value_descriptions,
         })
-    }
-
-    pub async fn move_x_absolute(&self, x_position: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 5, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn set_x_indication_enable(&self, enable: bool) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        enable.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 10, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn get_core_gripper_max_y_velocity(&self) -> Result</* y_velocity= */ u16, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 18, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let y_velocity = u16::deserialize(&mut stream)?;
-        Ok(y_velocity)
-    }
-
-    pub async fn set_x_velocity_scale(&self, scale: u16) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        scale.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 21, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn set_settling_parameters(&self, time: u16, time_limit: u16) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        time.serialize(&mut args);
-        time_limit.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 15, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn get_settling_parameters(&self) -> Result<GetSettlingParametersReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 14, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let time = u16::deserialize(&mut stream)?;
-        let time_limit = u16::deserialize(&mut stream)?;
-        Ok(GetSettlingParametersReply { time, time_limit })
-    }
-
-    pub async fn get_x_velocity_scale(&self) -> Result</* scale= */ u16, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 22, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let scale = u16::deserialize(&mut stream)?;
-        Ok(scale)
-    }
-
-    pub async fn unlock(&self) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 23, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
     }
 
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
@@ -399,109 +507,6 @@ impl NimbusCoreXyCoord {
             structure_element_descriptions,
         })
     }
-
-    pub async fn set_core_gripper_max_y_velocity(&self, y_velocity: u16) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        y_velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 17, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn set_x_calibration(&self, x_offset: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        x_offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 8, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
-        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
-        Ok(InterfaceDescriptorsReply {
-            interface_ids,
-            interface_descriptors,
-        })
-    }
-
-    pub async fn is_x_initialized(&self) -> Result<IsXInitializedReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 12, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let initialized = bool::deserialize(&mut stream)?;
-        Ok(IsXInitializedReply { initialized })
-    }
-
-    pub async fn move_x_relative_1(&self, x_distance: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        x_distance.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn move_x_relative_2(&self, x_distance: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        x_distance.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let name = String::deserialize(&mut stream)?;
-        let version = String::deserialize(&mut stream)?;
-        let methods = u32::deserialize(&mut stream)?;
-        let subobjects = u16::deserialize(&mut stream)?;
-        Ok(ObjectInfoReply {
-            name,
-            version,
-            methods,
-            subobjects,
-        })
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -510,9 +515,28 @@ pub struct GetXCalibrationReply {
 }
 
 #[derive(Clone, Debug)]
+pub struct IsXInitializedReply {
+    initialized: bool,
+}
+
+#[derive(Clone, Debug)]
 pub struct GetDesiredPositionReply {
     x_position: i32,
-    y_position: Vec<i16>,
+    y_position: Vec<i32>,
+}
+
+#[derive(Clone, Debug)]
+pub struct GetSettlingParametersReply {
+    time: u16,
+    time_limit: u16,
+}
+
+#[derive(Clone, Debug)]
+pub struct ObjectInfoReply {
+    name: String,
+    version: String,
+    methods: u32,
+    subobjects: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -533,17 +557,17 @@ pub struct SubObjectInfoReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct EnumInfoReply {
-    enumeration_names: Vec<String>,
-    number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
-    enumeration_value_descriptions: Vec<String>,
+pub struct InterfaceDescriptorsReply {
+    interface_ids: Vec<u8>,
+    interface_descriptors: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
-pub struct GetSettlingParametersReply {
-    time: u16,
-    time_limit: u16,
+pub struct EnumInfoReply {
+    enumeration_names: Vec<String>,
+    number_enumeration_values: Vec<u32>,
+    enumeration_values: Vec<i32>,
+    enumeration_value_descriptions: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -552,23 +576,4 @@ pub struct StructInfoReply {
     number_structure_elements: Vec<u32>,
     structure_element_types: Vec<u8>,
     structure_element_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct InterfaceDescriptorsReply {
-    interface_ids: Vec<u8>,
-    interface_descriptors: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct IsXInitializedReply {
-    initialized: bool,
-}
-
-#[derive(Clone, Debug)]
-pub struct ObjectInfoReply {
-    name: String,
-    version: String,
-    methods: u32,
-    subobjects: u16,
 }

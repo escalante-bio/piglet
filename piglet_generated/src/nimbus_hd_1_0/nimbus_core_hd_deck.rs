@@ -31,25 +31,17 @@ impl NimbusCoreHdDeck {
         }
     }
 
-    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
+    pub async fn is_deck_monitoring_available(&self) -> Result</* monitoring= */ bool, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
+            .act(&self.address, 1, 0, 1, args.freeze())
             .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        let name = String::deserialize(&mut stream)?;
-        let version = String::deserialize(&mut stream)?;
-        let methods = u32::deserialize(&mut stream)?;
-        let subobjects = u16::deserialize(&mut stream)?;
-        Ok(ObjectInfoReply {
-            name,
-            version,
-            methods,
-            subobjects,
-        })
+        let monitoring = bool::deserialize(&mut stream)?;
+        Ok(monitoring)
     }
 
     pub async fn get_tracks(&self) -> Result</* track= */ u8, Error> {
@@ -65,6 +57,19 @@ impl NimbusCoreHdDeck {
         Ok(track)
     }
 
+    pub async fn get_track_sensor_states(&self) -> Result</* sensors= */ Vec<bool>, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 3, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let sensors = Vec::<bool>::deserialize(&mut stream)?;
+        Ok(sensors)
+    }
+
     pub async fn get_gantry_status(&self) -> Result</* status= */ GantryState, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
@@ -78,51 +83,9 @@ impl NimbusCoreHdDeck {
         Ok(status)
     }
 
-    pub async fn get_track_led_states(&self) -> Result</* leds= */ Vec<LedState>, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 8, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let leds = MVec::<Vec<LedState>>::deserialize(&mut stream)?.0;
-        Ok(leds)
-    }
-
-    pub async fn have_deck_sensors_changed(&self) -> Result</* changed= */ bool, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 12, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let changed = bool::deserialize(&mut stream)?;
-        Ok(changed)
-    }
-
-    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
-        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
-        Ok(InterfaceDescriptorsReply {
-            interface_ids,
-            interface_descriptors,
-        })
-    }
-
     pub async fn configure_tracks(
         &self,
+
         configuring: bool,
     ) -> Result</* sensors= */ Vec<bool>, Error> {
         let mut args = BytesMut::new();
@@ -138,30 +101,9 @@ impl NimbusCoreHdDeck {
         Ok(sensors)
     }
 
-    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
-        let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
-        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(EnumInfoReply {
-            enumeration_names,
-            number_enumeration_values,
-            enumeration_values,
-            enumeration_value_descriptions,
-        })
-    }
-
     pub async fn load_tracks(
         &self,
+
         load: bool,
         track: u8,
         width: u8,
@@ -181,25 +123,43 @@ impl NimbusCoreHdDeck {
         Ok(sensors)
     }
 
-    pub async fn load_tracks_2(
-        &self,
-        load: bool,
-        tracks: Vec<u8>,
-        widths: Vec<u8>,
-    ) -> Result</* sensors= */ Vec<bool>, Error> {
+    pub async fn cancel_track(&self) -> Result</* sensors= */ Vec<bool>, Error> {
         let mut args = BytesMut::new();
-        load.serialize(&mut args);
-        tracks.serialize(&mut args);
-        widths.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 13, args.freeze())
+            .act(&self.address, 1, 3, 7, args.freeze())
             .await?;
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
         let sensors = Vec::<bool>::deserialize(&mut stream)?;
         Ok(sensors)
+    }
+
+    pub async fn get_track_led_states(&self) -> Result</* leds= */ Vec<LedState>, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 8, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let leds = MVec::<Vec<LedState>>::deserialize(&mut stream)?.0;
+        Ok(leds)
+    }
+
+    pub async fn configure_track_leds(&self, leds: Vec<LedConfiguration>) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        MVec(leds).serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 9, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
     }
 
     pub async fn is_deck_monitored(&self) -> Result</* monitoring= */ bool, Error> {
@@ -228,6 +188,62 @@ impl NimbusCoreHdDeck {
         Ok(())
     }
 
+    pub async fn have_deck_sensors_changed(&self) -> Result</* changed= */ bool, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 12, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let changed = bool::deserialize(&mut stream)?;
+        Ok(changed)
+    }
+
+    pub async fn load_tracks_2(
+        &self,
+
+        load: bool,
+        tracks: Vec<u8>,
+        widths: Vec<u8>,
+    ) -> Result</* sensors= */ Vec<bool>, Error> {
+        let mut args = BytesMut::new();
+        load.serialize(&mut args);
+        tracks.serialize(&mut args);
+        widths.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 13, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let sensors = Vec::<bool>::deserialize(&mut stream)?;
+        Ok(sensors)
+    }
+
+    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 1, args.freeze())
+            .await?;
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        }
+        let name = String::deserialize(&mut stream)?;
+        let version = String::deserialize(&mut stream)?;
+        let methods = u32::deserialize(&mut stream)?;
+        let subobjects = u16::deserialize(&mut stream)?;
+        Ok(ObjectInfoReply {
+            name,
+            version,
+            methods,
+            subobjects,
+        })
+    }
+
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
@@ -254,41 +270,6 @@ impl NimbusCoreHdDeck {
         })
     }
 
-    pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
-        let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let struct_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_structure_elements = Vec::<u32>::deserialize(&mut stream)?;
-        let structure_element_types = Vec::<u8>::deserialize(&mut stream)?;
-        let structure_element_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(StructInfoReply {
-            struct_names,
-            number_structure_elements,
-            structure_element_types,
-            structure_element_descriptions,
-        })
-    }
-
-    pub async fn configure_track_leds(&self, leds: Vec<LedConfiguration>) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        MVec(leds).serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 9, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
@@ -309,43 +290,65 @@ impl NimbusCoreHdDeck {
         })
     }
 
-    pub async fn cancel_track(&self) -> Result</* sensors= */ Vec<bool>, Error> {
+    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 7, args.freeze())
+            .act(&self.address, 0, 0, 4, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
-        let sensors = Vec::<bool>::deserialize(&mut stream)?;
-        Ok(sensors)
+        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
+        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
+        Ok(InterfaceDescriptorsReply {
+            interface_ids,
+            interface_descriptors,
+        })
     }
 
-    pub async fn is_deck_monitoring_available(&self) -> Result</* monitoring= */ bool, Error> {
+    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
+        interface_id.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 0, 1, args.freeze())
+            .act(&self.address, 0, 0, 5, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
-        let monitoring = bool::deserialize(&mut stream)?;
-        Ok(monitoring)
+        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
+        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(EnumInfoReply {
+            enumeration_names,
+            number_enumeration_values,
+            enumeration_values,
+            enumeration_value_descriptions,
+        })
     }
 
-    pub async fn get_track_sensor_states(&self) -> Result</* sensors= */ Vec<bool>, Error> {
+    pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
+        interface_id.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 0, 3, args.freeze())
+            .act(&self.address, 0, 0, 6, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
-        let sensors = Vec::<bool>::deserialize(&mut stream)?;
-        Ok(sensors)
+        let struct_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_structure_elements = Vec::<u32>::deserialize(&mut stream)?;
+        let structure_element_types = Vec::<u8>::deserialize(&mut stream)?;
+        let structure_element_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(StructInfoReply {
+            struct_names,
+            number_structure_elements,
+            structure_element_types,
+            structure_element_descriptions,
+        })
     }
 }
 
@@ -763,20 +766,6 @@ pub struct ObjectInfoReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct InterfaceDescriptorsReply {
-    interface_ids: Vec<u8>,
-    interface_descriptors: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct EnumInfoReply {
-    enumeration_names: Vec<String>,
-    number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
-    enumeration_value_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
     action: u8,
@@ -787,16 +776,30 @@ pub struct MethodInfoReply {
 }
 
 #[derive(Clone, Debug)]
+pub struct SubObjectInfoReply {
+    module_id: u16,
+    node_id: u16,
+    object_id: u16,
+}
+
+#[derive(Clone, Debug)]
+pub struct InterfaceDescriptorsReply {
+    interface_ids: Vec<u8>,
+    interface_descriptors: Vec<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnumInfoReply {
+    enumeration_names: Vec<String>,
+    number_enumeration_values: Vec<u32>,
+    enumeration_values: Vec<i32>,
+    enumeration_value_descriptions: Vec<String>,
+}
+
+#[derive(Clone, Debug)]
 pub struct StructInfoReply {
     struct_names: Vec<String>,
     number_structure_elements: Vec<u32>,
     structure_element_types: Vec<u8>,
     structure_element_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
 }

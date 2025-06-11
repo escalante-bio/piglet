@@ -589,6 +589,19 @@ impl PigletCodec for MVec<Vec<{}>> {{
         }
     }
 
+    flatten.sort_by(|a, b| {
+        // We want to ensure that the generic methods on interface 0 get put at the bottom
+        let a_key: u32 = match a.interface_id {
+            0 => 1024 * 1024 + a.method_id as u32,
+            i => (i as u32) * 1024 + a.method_id as u32,
+        };
+        let b_key: u32 = match b.interface_id {
+            0 => 1024 * 1024 + b.method_id as u32,
+            i => (i as u32) * 1024 + b.method_id as u32,
+        };
+        return a_key.cmp(&b_key);
+    });
+
     for method in flatten {
         let mut arguments = Vec::new();
         let mut return_elements = Vec::new();
@@ -698,10 +711,10 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     rust_type: "Vec::<i32>".to_string(),
                 },
                 51 => ReturnElement {
-                    rust_type: "Vec::<i16>".to_string(),
+                    rust_type: "Vec::<i32>".to_string(),
                 },
                 52 => ReturnValue {
-                    rust_type: "Vec::<i16>".to_string(),
+                    rust_type: "Vec::<i32>".to_string(),
                 },
                 53 => Argument {
                     rust_type: "Vec::<u32>".to_string(),
@@ -893,13 +906,23 @@ impl PigletCodec for MVec<Vec<{}>> {{
             anyhow::bail!("Cannot have more than one return value");
         }
 
-        let mut contents = vec![
-            format!(
-                "  pub async fn {}(",
-                method.name.from_case(Case::Pascal).to_case(Case::Snake)
-            ),
-            "    &self,".to_string(),
-        ];
+        let mut contents = vec![format!(
+            r#"
+{}  pub async fn {}(
+    &self,
+  "#,
+            // TODO(april): make an arg to control whether this is on?
+            // format!("{:#?}", method)
+            //     .lines()
+            //     .fold(String::new(), |mut r, l| {
+            //         r.push_str("  // ");
+            //         r.push_str(l);
+            //         r.push('\n');
+            //         r
+            //     }),
+            "",
+            method.name.from_case(Case::Pascal).to_case(Case::Snake)
+        )];
         for argument in &arguments {
             contents.push(format!("    {}: {},", argument.name, argument.rust_type));
         }

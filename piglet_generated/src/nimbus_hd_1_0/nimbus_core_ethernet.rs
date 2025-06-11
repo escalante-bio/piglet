@@ -31,6 +31,58 @@ impl NimbusCoreEthernet {
         }
     }
 
+    pub async fn set_dhcp_enable(&self, enable_dhcp: bool) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        enable_dhcp.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 1, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_dhcp_enable(&self) -> Result</* use_dhcp= */ bool, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 2, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let use_dhcp = bool::deserialize(&mut stream)?;
+        Ok(use_dhcp)
+    }
+
+    pub async fn set_host_name(&self, host_name: String) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        host_name.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 3, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_host_name(&self) -> Result</* host_name= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 4, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let host_name = String::deserialize(&mut stream)?;
+        Ok(host_name)
+    }
+
     pub async fn get_current_host_name(&self) -> Result</* host_name= */ String, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
@@ -44,17 +96,70 @@ impl NimbusCoreEthernet {
         Ok(host_name)
     }
 
-    pub async fn get_instrument_id(&self) -> Result</* instrument_id= */ String, Error> {
+    pub async fn get_default_host_name(&self) -> Result</* host_name= */ String, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 0, 18, args.freeze())
+            .act(&self.address, 1, 0, 6, args.freeze())
             .await?;
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        let instrument_id = String::deserialize(&mut stream)?;
-        Ok(instrument_id)
+        let host_name = String::deserialize(&mut stream)?;
+        Ok(host_name)
+    }
+
+    pub async fn set_static_ip_address(
+        &self,
+
+        ip_address: String,
+        subnet_mask: String,
+    ) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        ip_address.serialize(&mut args);
+        subnet_mask.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 7, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_static_ip_address(&self) -> Result<GetStaticIpAddressReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 8, args.freeze())
+            .await?;
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        }
+        let ip_address = String::deserialize(&mut stream)?;
+        let subnet_mask = String::deserialize(&mut stream)?;
+        Ok(GetStaticIpAddressReply {
+            ip_address,
+            subnet_mask,
+        })
+    }
+
+    pub async fn get_current_ip_address(&self) -> Result<GetCurrentIpAddressReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 9, args.freeze())
+            .await?;
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        }
+        let ip_address = String::deserialize(&mut stream)?;
+        let subnet_mask = String::deserialize(&mut stream)?;
+        Ok(GetCurrentIpAddressReply {
+            ip_address,
+            subnet_mask,
+        })
     }
 
     pub async fn get_mac_address(&self) -> Result</* mac_address= */ String, Error> {
@@ -70,25 +175,12 @@ impl NimbusCoreEthernet {
         Ok(mac_address)
     }
 
-    pub async fn set_instrument_id(&self, instrument_id: String) -> Result<(), Error> {
+    pub async fn set_dhcp_timeout(&self, dhcp_timeout: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        instrument_id.serialize(&mut args);
+        dhcp_timeout.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 17, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn set_dhcp_enable(&self, enable_dhcp: bool) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        enable_dhcp.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 1, args.freeze())
+            .act(&self.address, 1, 3, 11, args.freeze())
             .await?;
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
@@ -109,47 +201,43 @@ impl NimbusCoreEthernet {
         Ok(dhcp_timeout)
     }
 
-    pub async fn get_host_name(&self) -> Result</* host_name= */ String, Error> {
+    pub async fn set_location(&self, location: String) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        location.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 13, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_location(&self) -> Result</* location= */ String, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 0, 4, args.freeze())
+            .act(&self.address, 1, 0, 14, args.freeze())
             .await?;
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        let host_name = String::deserialize(&mut stream)?;
-        Ok(host_name)
+        let location = String::deserialize(&mut stream)?;
+        Ok(location)
     }
 
-    pub async fn get_dhcp_enable(&self) -> Result</* use_dhcp= */ bool, Error> {
+    pub async fn set_comment(&self, comment: String) -> Result<(), Error> {
         let mut args = BytesMut::new();
+        comment.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 0, 2, args.freeze())
+            .act(&self.address, 1, 3, 15, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
-        let use_dhcp = bool::deserialize(&mut stream)?;
-        Ok(use_dhcp)
-    }
-
-    pub async fn get_current_ip_address(&self) -> Result<GetCurrentIpAddressReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 9, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let ip_address = String::deserialize(&mut stream)?;
-        let subnet_mask = String::deserialize(&mut stream)?;
-        Ok(GetCurrentIpAddressReply {
-            ip_address,
-            subnet_mask,
-        })
+        Ok(())
     }
 
     pub async fn get_comment(&self) -> Result</* comment= */ String, Error> {
@@ -165,6 +253,32 @@ impl NimbusCoreEthernet {
         Ok(comment)
     }
 
+    pub async fn set_instrument_id(&self, instrument_id: String) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        instrument_id.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 17, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_instrument_id(&self) -> Result</* instrument_id= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 18, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let instrument_id = String::deserialize(&mut stream)?;
+        Ok(instrument_id)
+    }
+
     pub async fn get_instrument_type(&self) -> Result</* instrument_type= */ String, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
@@ -176,6 +290,42 @@ impl NimbusCoreEthernet {
         }
         let instrument_type = String::deserialize(&mut stream)?;
         Ok(instrument_type)
+    }
+
+    pub async fn save_settings(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 20, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn recall_settings(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 21, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn invalidate_settings(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 22, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
     }
 
     pub async fn are_stored_settings_valid(&self) -> Result</* valid= */ bool, Error> {
@@ -196,6 +346,32 @@ impl NimbusCoreEthernet {
         let (count, mut stream) = self
             .robot
             .act(&self.address, 1, 0, 24, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let port = u16::deserialize(&mut stream)?;
+        Ok(port)
+    }
+
+    pub async fn set_tcp_port(&self, port: u16) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        port.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 25, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_udp_port(&self) -> Result</* port= */ u16, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 26, args.freeze())
             .await?;
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
@@ -238,29 +414,30 @@ impl NimbusCoreEthernet {
         })
     }
 
-    pub async fn save_settings(&self) -> Result<(), Error> {
+    pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
+        method.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 20, args.freeze())
+            .act(&self.address, 0, 0, 2, args.freeze())
             .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        if count != 6 {
+            return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
-        Ok(())
-    }
-
-    pub async fn get_udp_port(&self) -> Result</* port= */ u16, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 26, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let port = u16::deserialize(&mut stream)?;
-        Ok(port)
+        let interfaceid = u8::deserialize(&mut stream)?;
+        let action = u8::deserialize(&mut stream)?;
+        let actionid = u16::deserialize(&mut stream)?;
+        let name = String::deserialize(&mut stream)?;
+        let parametertypes = String::deserialize(&mut stream)?;
+        let parameternames = String::deserialize(&mut stream)?;
+        Ok(MethodInfoReply {
+            interfaceid,
+            action,
+            actionid,
+            name,
+            parametertypes,
+            parameternames,
+        })
     }
 
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
@@ -281,61 +458,6 @@ impl NimbusCoreEthernet {
             node_id,
             object_id,
         })
-    }
-
-    pub async fn invalidate_settings(&self) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 22, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn set_location(&self, location: String) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        location.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 13, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn get_static_ip_address(&self) -> Result<GetStaticIpAddressReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 8, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let ip_address = String::deserialize(&mut stream)?;
-        let subnet_mask = String::deserialize(&mut stream)?;
-        Ok(GetStaticIpAddressReply {
-            ip_address,
-            subnet_mask,
-        })
-    }
-
-    pub async fn get_location(&self) -> Result</* location= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 14, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let location = String::deserialize(&mut stream)?;
-        Ok(location)
     }
 
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
@@ -367,7 +489,7 @@ impl NimbusCoreEthernet {
         }
         let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
         let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
         let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
         Ok(EnumInfoReply {
             enumeration_names,
@@ -375,63 +497,6 @@ impl NimbusCoreEthernet {
             enumeration_values,
             enumeration_value_descriptions,
         })
-    }
-
-    pub async fn set_host_name(&self, host_name: String) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        host_name.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 3, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn set_dhcp_timeout(&self, dhcp_timeout: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        dhcp_timeout.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 11, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn set_comment(&self, comment: String) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        comment.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 15, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn set_static_ip_address(
-        &self,
-        ip_address: String,
-        subnet_mask: String,
-    ) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        ip_address.serialize(&mut args);
-        subnet_mask.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 7, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
     }
 
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
@@ -455,70 +520,12 @@ impl NimbusCoreEthernet {
             structure_element_descriptions,
         })
     }
+}
 
-    pub async fn get_default_host_name(&self) -> Result</* host_name= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 6, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let host_name = String::deserialize(&mut stream)?;
-        Ok(host_name)
-    }
-
-    pub async fn set_tcp_port(&self, port: u16) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        port.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 25, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn recall_settings(&self) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 21, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
-        let mut args = BytesMut::new();
-        method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
-        if count != 6 {
-            return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
-        }
-        let interfaceid = u8::deserialize(&mut stream)?;
-        let action = u8::deserialize(&mut stream)?;
-        let actionid = u16::deserialize(&mut stream)?;
-        let name = String::deserialize(&mut stream)?;
-        let parametertypes = String::deserialize(&mut stream)?;
-        let parameternames = String::deserialize(&mut stream)?;
-        Ok(MethodInfoReply {
-            interfaceid,
-            action,
-            actionid,
-            name,
-            parametertypes,
-            parameternames,
-        })
-    }
+#[derive(Clone, Debug)]
+pub struct GetStaticIpAddressReply {
+    ip_address: String,
+    subnet_mask: String,
 }
 
 #[derive(Clone, Debug)]
@@ -536,16 +543,20 @@ pub struct ObjectInfoReply {
 }
 
 #[derive(Clone, Debug)]
+pub struct MethodInfoReply {
+    interfaceid: u8,
+    action: u8,
+    actionid: u16,
+    name: String,
+    parametertypes: String,
+    parameternames: String,
+}
+
+#[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
     node_id: u16,
     object_id: u16,
-}
-
-#[derive(Clone, Debug)]
-pub struct GetStaticIpAddressReply {
-    ip_address: String,
-    subnet_mask: String,
 }
 
 #[derive(Clone, Debug)]
@@ -558,7 +569,7 @@ pub struct InterfaceDescriptorsReply {
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
     number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
+    enumeration_values: Vec<i32>,
     enumeration_value_descriptions: Vec<String>,
 }
 
@@ -568,14 +579,4 @@ pub struct StructInfoReply {
     number_structure_elements: Vec<u32>,
     structure_element_types: Vec<u8>,
     structure_element_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct MethodInfoReply {
-    interfaceid: u8,
-    action: u8,
-    actionid: u16,
-    name: String,
-    parametertypes: String,
-    parameternames: String,
 }

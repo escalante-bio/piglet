@@ -31,6 +31,64 @@ impl NimbusCoreDoorLock {
         }
     }
 
+    pub async fn lock_door(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 1, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn unlock_door(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 2, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn is_door_locked(&self) -> Result<IsDoorLockedReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 3, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let locked = bool::deserialize(&mut stream)?;
+        Ok(IsDoorLockedReply { locked })
+    }
+
+    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 1, args.freeze())
+            .await?;
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        }
+        let name = String::deserialize(&mut stream)?;
+        let version = String::deserialize(&mut stream)?;
+        let methods = u32::deserialize(&mut stream)?;
+        let subobjects = u16::deserialize(&mut stream)?;
+        Ok(ObjectInfoReply {
+            name,
+            version,
+            methods,
+            subobjects,
+        })
+    }
+
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
@@ -57,61 +115,6 @@ impl NimbusCoreDoorLock {
         })
     }
 
-    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let name = String::deserialize(&mut stream)?;
-        let version = String::deserialize(&mut stream)?;
-        let methods = u32::deserialize(&mut stream)?;
-        let subobjects = u16::deserialize(&mut stream)?;
-        Ok(ObjectInfoReply {
-            name,
-            version,
-            methods,
-            subobjects,
-        })
-    }
-
-    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
-        let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
-        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(EnumInfoReply {
-            enumeration_names,
-            number_enumeration_values,
-            enumeration_values,
-            enumeration_value_descriptions,
-        })
-    }
-
-    pub async fn lock_door(&self) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 1, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
@@ -132,16 +135,43 @@ impl NimbusCoreDoorLock {
         })
     }
 
-    pub async fn unlock_door(&self) -> Result<(), Error> {
+    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
+            .act(&self.address, 0, 0, 4, args.freeze())
             .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
-        Ok(())
+        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
+        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
+        Ok(InterfaceDescriptorsReply {
+            interface_ids,
+            interface_descriptors,
+        })
+    }
+
+    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
+        let mut args = BytesMut::new();
+        interface_id.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 5, args.freeze())
+            .await?;
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        }
+        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
+        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(EnumInfoReply {
+            enumeration_names,
+            number_enumeration_values,
+            enumeration_values,
+            enumeration_value_descriptions,
+        })
     }
 
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
@@ -165,36 +195,19 @@ impl NimbusCoreDoorLock {
             structure_element_descriptions,
         })
     }
+}
 
-    pub async fn is_door_locked(&self) -> Result<IsDoorLockedReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 3, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let locked = bool::deserialize(&mut stream)?;
-        Ok(IsDoorLockedReply { locked })
-    }
+#[derive(Clone, Debug)]
+pub struct IsDoorLockedReply {
+    locked: bool,
+}
 
-    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
-        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
-        Ok(InterfaceDescriptorsReply {
-            interface_ids,
-            interface_descriptors,
-        })
-    }
+#[derive(Clone, Debug)]
+pub struct ObjectInfoReply {
+    name: String,
+    version: String,
+    methods: u32,
+    subobjects: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -208,26 +221,24 @@ pub struct MethodInfoReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct ObjectInfoReply {
-    name: String,
-    version: String,
-    methods: u32,
-    subobjects: u16,
+pub struct SubObjectInfoReply {
+    module_id: u16,
+    node_id: u16,
+    object_id: u16,
+}
+
+#[derive(Clone, Debug)]
+pub struct InterfaceDescriptorsReply {
+    interface_ids: Vec<u8>,
+    interface_descriptors: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
     number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
+    enumeration_values: Vec<i32>,
     enumeration_value_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -236,15 +247,4 @@ pub struct StructInfoReply {
     number_structure_elements: Vec<u32>,
     structure_element_types: Vec<u8>,
     structure_element_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct IsDoorLockedReply {
-    locked: bool,
-}
-
-#[derive(Clone, Debug)]
-pub struct InterfaceDescriptorsReply {
-    interface_ids: Vec<u8>,
-    interface_descriptors: Vec<String>,
 }

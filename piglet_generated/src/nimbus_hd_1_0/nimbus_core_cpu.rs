@@ -119,6 +119,101 @@ impl NimbusCoreCpu {
         }
     }
 
+    pub async fn download_info(&self) -> Result<DownloadInfoReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 1, args.freeze())
+            .await?;
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        }
+        let buffer_size = i32::deserialize(&mut stream)?;
+        let file_name_template = String::deserialize(&mut stream)?;
+        Ok(DownloadInfoReply {
+            buffer_size,
+            file_name_template,
+        })
+    }
+
+    pub async fn download_initiate(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 2, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn download_write(&self, download_data: Vec<u8>) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        download_data.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 3, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn download_complete(&self, success: bool) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        success.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 4, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn version(&self) -> Result<VersionReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 5, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let firmware_version = String::deserialize(&mut stream)?;
+        Ok(VersionReply { firmware_version })
+    }
+
+    pub async fn is_in_boot(&self) -> Result</* in_boot= */ bool, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 6, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let in_boot = bool::deserialize(&mut stream)?;
+        Ok(in_boot)
+    }
+
+    pub async fn read_uint_8(&self, address: u32) -> Result</* value= */ u8, Error> {
+        let mut args = BytesMut::new();
+        address.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 7, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = u8::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
     pub async fn read_uint_32(&self, address: u32) -> Result</* value= */ u32, Error> {
         let mut args = BytesMut::new();
         address.serialize(&mut args);
@@ -133,26 +228,32 @@ impl NimbusCoreCpu {
         Ok(value)
     }
 
-    pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
+    pub async fn write_uint_8(&self, address: u32, value: u8) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
+        address.serialize(&mut args);
+        value.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
+            .act(&self.address, 1, 3, 9, args.freeze())
             .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
-        let struct_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_structure_elements = Vec::<u32>::deserialize(&mut stream)?;
-        let structure_element_types = Vec::<u8>::deserialize(&mut stream)?;
-        let structure_element_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(StructInfoReply {
-            struct_names,
-            number_structure_elements,
-            structure_element_types,
-            structure_element_descriptions,
-        })
+        Ok(())
+    }
+
+    pub async fn write_uint_32(&self, address: u32, value: u32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        address.serialize(&mut args);
+        value.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 10, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
     }
 
     pub async fn reg_table_entries(&self) -> Result</* entries= */ u32, Error> {
@@ -166,58 +267,6 @@ impl NimbusCoreCpu {
         }
         let entries = u32::deserialize(&mut stream)?;
         Ok(entries)
-    }
-
-    pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
-        let mut args = BytesMut::new();
-        method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
-        if count != 6 {
-            return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
-        }
-        let interfaceid = u8::deserialize(&mut stream)?;
-        let action = u8::deserialize(&mut stream)?;
-        let actionid = u16::deserialize(&mut stream)?;
-        let name = String::deserialize(&mut stream)?;
-        let parametertypes = String::deserialize(&mut stream)?;
-        let parameternames = String::deserialize(&mut stream)?;
-        Ok(MethodInfoReply {
-            interfaceid,
-            action,
-            actionid,
-            name,
-            parametertypes,
-            parameternames,
-        })
-    }
-
-    pub async fn get_serial_number(&self) -> Result</* value= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 9, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn get_module_version(&self) -> Result</* value= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 8, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
     }
 
     pub async fn reg_table_entry(&self, entry: u32) -> Result<RegTableEntryReply, Error> {
@@ -242,6 +291,45 @@ impl NimbusCoreCpu {
         })
     }
 
+    pub async fn reset(&self, delay_ms: u32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        delay_ms.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 2, 3, 1, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn boot_loader_version(&self) -> Result</* boot_loader_version= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 2, 0, 2, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let boot_loader_version = String::deserialize(&mut stream)?;
+        Ok(boot_loader_version)
+    }
+
+    pub async fn get_up_time(&self) -> Result</* value= */ SUpTime, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 2, 0, 3, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = SUpTime::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
     pub async fn get_test_address(&self) -> Result</* value= */ u32, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
@@ -255,21 +343,69 @@ impl NimbusCoreCpu {
         Ok(value)
     }
 
-    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
+    pub async fn get_module_name(&self) -> Result</* value= */ String, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
+            .act(&self.address, 3, 0, 1, args.freeze())
             .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
-        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
-        Ok(InterfaceDescriptorsReply {
-            interface_ids,
-            interface_descriptors,
-        })
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_operating_mode(&self) -> Result</* value= */ OperatingMode, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 2, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = OperatingMode::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_firmware_version(&self) -> Result</* value= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 3, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_compatibility_string(&self) -> Result</* value= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 4, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_firmware_part_number(&self) -> Result</* value= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 5, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
     }
 
     pub async fn get_firmware_revision(&self) -> Result</* value= */ String, Error> {
@@ -277,6 +413,86 @@ impl NimbusCoreCpu {
         let (count, mut stream) = self
             .robot
             .act(&self.address, 3, 0, 6, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_calibration_information(
+        &self,
+    ) -> Result</* value= */ Vec<CalibrationInformation>, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 7, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = MVec::<Vec<CalibrationInformation>>::deserialize(&mut stream)?.0;
+        Ok(value)
+    }
+
+    pub async fn get_module_version(&self) -> Result</* value= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 8, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_serial_number(&self) -> Result</* value= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 9, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_hardware_part_number(&self) -> Result</* value= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 10, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_hardware_revision(&self) -> Result</* value= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 11, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = String::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_other(&self) -> Result</* value= */ String, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 3, 0, 12, args.freeze())
             .await?;
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
@@ -306,43 +522,30 @@ impl NimbusCoreCpu {
         })
     }
 
-    pub async fn get_other(&self) -> Result</* value= */ String, Error> {
+    pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
+        method.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 3, 0, 12, args.freeze())
+            .act(&self.address, 0, 0, 2, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 6 {
+            return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn is_in_boot(&self) -> Result</* in_boot= */ bool, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 6, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let in_boot = bool::deserialize(&mut stream)?;
-        Ok(in_boot)
-    }
-
-    pub async fn reset(&self, delay_ms: u32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        delay_ms.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 2, 3, 1, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
+        let interfaceid = u8::deserialize(&mut stream)?;
+        let action = u8::deserialize(&mut stream)?;
+        let actionid = u16::deserialize(&mut stream)?;
+        let name = String::deserialize(&mut stream)?;
+        let parametertypes = String::deserialize(&mut stream)?;
+        let parameternames = String::deserialize(&mut stream)?;
+        Ok(MethodInfoReply {
+            interfaceid,
+            action,
+            actionid,
+            name,
+            parametertypes,
+            parameternames,
+        })
     }
 
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
@@ -365,123 +568,21 @@ impl NimbusCoreCpu {
         })
     }
 
-    pub async fn get_operating_mode(&self) -> Result</* value= */ OperatingMode, Error> {
+    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 3, 0, 2, args.freeze())
+            .act(&self.address, 0, 0, 4, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
-        let value = OperatingMode::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn get_up_time(&self) -> Result</* value= */ SUpTime, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 2, 0, 3, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = SUpTime::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn write_uint_8(&self, address: u32, value: u8) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        address.serialize(&mut args);
-        value.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 9, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn get_firmware_version(&self) -> Result</* value= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 3, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn read_uint_8(&self, address: u32) -> Result</* value= */ u8, Error> {
-        let mut args = BytesMut::new();
-        address.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 7, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = u8::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn version(&self) -> Result<VersionReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 5, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let firmware_version = String::deserialize(&mut stream)?;
-        Ok(VersionReply { firmware_version })
-    }
-
-    pub async fn download_write(&self, download_data: Vec<u8>) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        download_data.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 3, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn download_complete(&self, success: bool) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        success.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 4, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn get_hardware_revision(&self) -> Result</* value= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 11, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
+        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
+        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
+        Ok(InterfaceDescriptorsReply {
+            interface_ids,
+            interface_descriptors,
+        })
     }
 
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
@@ -496,7 +597,7 @@ impl NimbusCoreCpu {
         }
         let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
         let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
         let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
         Ok(EnumInfoReply {
             enumeration_names,
@@ -506,127 +607,26 @@ impl NimbusCoreCpu {
         })
     }
 
-    pub async fn boot_loader_version(&self) -> Result</* boot_loader_version= */ String, Error> {
+    pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
+        interface_id.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 2, 0, 2, args.freeze())
+            .act(&self.address, 0, 0, 6, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
-        let boot_loader_version = String::deserialize(&mut stream)?;
-        Ok(boot_loader_version)
-    }
-
-    pub async fn get_calibration_information(
-        &self,
-    ) -> Result</* value= */ Vec<CalibrationInformation>, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 7, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = MVec::<Vec<CalibrationInformation>>::deserialize(&mut stream)?.0;
-        Ok(value)
-    }
-
-    pub async fn get_firmware_part_number(&self) -> Result</* value= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 5, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn get_module_name(&self) -> Result</* value= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 1, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn download_initiate(&self) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn write_uint_32(&self, address: u32, value: u32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        address.serialize(&mut args);
-        value.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 10, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn get_compatibility_string(&self) -> Result</* value= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 4, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
-    }
-
-    pub async fn download_info(&self) -> Result<DownloadInfoReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 1, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let buffer_size = i32::deserialize(&mut stream)?;
-        let file_name_template = String::deserialize(&mut stream)?;
-        Ok(DownloadInfoReply {
-            buffer_size,
-            file_name_template,
+        let struct_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_structure_elements = Vec::<u32>::deserialize(&mut stream)?;
+        let structure_element_types = Vec::<u8>::deserialize(&mut stream)?;
+        let structure_element_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(StructInfoReply {
+            struct_names,
+            number_structure_elements,
+            structure_element_types,
+            structure_element_descriptions,
         })
-    }
-
-    pub async fn get_hardware_part_number(&self) -> Result</* value= */ String, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 3, 0, 10, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = String::deserialize(&mut stream)?;
-        Ok(value)
     }
 }
 
@@ -898,11 +898,30 @@ impl PigletCodec for MVec<Vec<CalibrationInformation>> {
 }
 
 #[derive(Clone, Debug)]
-pub struct StructInfoReply {
-    struct_names: Vec<String>,
-    number_structure_elements: Vec<u32>,
-    structure_element_types: Vec<u8>,
-    structure_element_descriptions: Vec<String>,
+pub struct DownloadInfoReply {
+    buffer_size: i32,
+    file_name_template: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct VersionReply {
+    firmware_version: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct RegTableEntryReply {
+    module_id: u16,
+    node_id: u16,
+    object_id: u16,
+    link_handle: u32,
+}
+
+#[derive(Clone, Debug)]
+pub struct ObjectInfoReply {
+    name: String,
+    version: String,
+    methods: u32,
+    subobjects: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -916,11 +935,10 @@ pub struct MethodInfoReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct RegTableEntryReply {
+pub struct SubObjectInfoReply {
     module_id: u16,
     node_id: u16,
     object_id: u16,
-    link_handle: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -930,35 +948,17 @@ pub struct InterfaceDescriptorsReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct ObjectInfoReply {
-    name: String,
-    version: String,
-    methods: u32,
-    subobjects: u16,
-}
-
-#[derive(Clone, Debug)]
-pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
-}
-
-#[derive(Clone, Debug)]
-pub struct VersionReply {
-    firmware_version: String,
-}
-
-#[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
     number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
+    enumeration_values: Vec<i32>,
     enumeration_value_descriptions: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
-pub struct DownloadInfoReply {
-    buffer_size: i32,
-    file_name_template: String,
+pub struct StructInfoReply {
+    struct_names: Vec<String>,
+    number_structure_elements: Vec<u32>,
+    structure_element_types: Vec<u8>,
+    structure_element_descriptions: Vec<String>,
 }

@@ -31,17 +31,30 @@ impl NimbusCoreIoBoardDeck {
         }
     }
 
-    pub async fn configure_track_leds(&self, leds: Vec<LedConfiguration>) -> Result<(), Error> {
+    pub async fn get_positions(&self) -> Result</* value= */ u8, Error> {
         let mut args = BytesMut::new();
-        MVec(leds).serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 5, args.freeze())
+            .act(&self.address, 1, 0, 1, args.freeze())
             .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        Ok(())
+        let value = u8::deserialize(&mut stream)?;
+        Ok(value)
+    }
+
+    pub async fn get_track_sensor_states(&self) -> Result</* value= */ Vec<bool>, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 2, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = Vec::<bool>::deserialize(&mut stream)?;
+        Ok(value)
     }
 
     pub async fn get_track_led_states(&self) -> Result</* leds= */ Vec<LedState>, Error> {
@@ -57,17 +70,30 @@ impl NimbusCoreIoBoardDeck {
         Ok(leds)
     }
 
-    pub async fn get_track_sensor_states(&self) -> Result</* value= */ Vec<bool>, Error> {
+    pub async fn set_track_led_state(&self, leds: Vec<LedState>) -> Result<(), Error> {
         let mut args = BytesMut::new();
+        MVec(leds).serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 0, 2, args.freeze())
+            .act(&self.address, 1, 3, 4, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
-        let value = Vec::<bool>::deserialize(&mut stream)?;
-        Ok(value)
+        Ok(())
+    }
+
+    pub async fn configure_track_leds(&self, leds: Vec<LedConfiguration>) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        MVec(leds).serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 5, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
     }
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
@@ -89,39 +115,6 @@ impl NimbusCoreIoBoardDeck {
             methods,
             subobjects,
         })
-    }
-
-    pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
-        let mut args = BytesMut::new();
-        subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
-        if count != 3 {
-            return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
-        }
-        let module_id = u16::deserialize(&mut stream)?;
-        let node_id = u16::deserialize(&mut stream)?;
-        let object_id = u16::deserialize(&mut stream)?;
-        Ok(SubObjectInfoReply {
-            module_id,
-            node_id,
-            object_id,
-        })
-    }
-
-    pub async fn get_positions(&self) -> Result</* value= */ u8, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 1, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let value = u8::deserialize(&mut stream)?;
-        Ok(value)
     }
 
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
@@ -150,25 +143,23 @@ impl NimbusCoreIoBoardDeck {
         })
     }
 
-    pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
+    pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
+        subobject.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
+            .act(&self.address, 0, 0, 3, args.freeze())
             .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        if count != 3 {
+            return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
-        let struct_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_structure_elements = Vec::<u32>::deserialize(&mut stream)?;
-        let structure_element_types = Vec::<u8>::deserialize(&mut stream)?;
-        let structure_element_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(StructInfoReply {
-            struct_names,
-            number_structure_elements,
-            structure_element_types,
-            structure_element_descriptions,
+        let module_id = u16::deserialize(&mut stream)?;
+        let node_id = u16::deserialize(&mut stream)?;
+        let object_id = u16::deserialize(&mut stream)?;
+        Ok(SubObjectInfoReply {
+            module_id,
+            node_id,
+            object_id,
         })
     }
 
@@ -201,7 +192,7 @@ impl NimbusCoreIoBoardDeck {
         }
         let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
         let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
         let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
         Ok(EnumInfoReply {
             enumeration_names,
@@ -211,17 +202,26 @@ impl NimbusCoreIoBoardDeck {
         })
     }
 
-    pub async fn set_track_led_state(&self, leds: Vec<LedState>) -> Result<(), Error> {
+    pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
-        MVec(leds).serialize(&mut args);
+        interface_id.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 4, args.freeze())
+            .act(&self.address, 0, 0, 6, args.freeze())
             .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
-        Ok(())
+        let struct_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_structure_elements = Vec::<u32>::deserialize(&mut stream)?;
+        let structure_element_types = Vec::<u8>::deserialize(&mut stream)?;
+        let structure_element_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(StructInfoReply {
+            struct_names,
+            number_structure_elements,
+            structure_element_types,
+            structure_element_descriptions,
+        })
     }
 }
 
@@ -487,13 +487,6 @@ pub struct ObjectInfoReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
-}
-
-#[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
     action: u8,
@@ -504,11 +497,10 @@ pub struct MethodInfoReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct StructInfoReply {
-    struct_names: Vec<String>,
-    number_structure_elements: Vec<u32>,
-    structure_element_types: Vec<u8>,
-    structure_element_descriptions: Vec<String>,
+pub struct SubObjectInfoReply {
+    module_id: u16,
+    node_id: u16,
+    object_id: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -521,6 +513,14 @@ pub struct InterfaceDescriptorsReply {
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
     number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
+    enumeration_values: Vec<i32>,
     enumeration_value_descriptions: Vec<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct StructInfoReply {
+    struct_names: Vec<String>,
+    number_structure_elements: Vec<u32>,
+    structure_element_types: Vec<u8>,
+    structure_element_descriptions: Vec<String>,
 }

@@ -31,33 +31,11 @@ impl NimbusCoreGripperXyCoord {
         }
     }
 
-    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
+    pub async fn initialize_xy(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let name = String::deserialize(&mut stream)?;
-        let version = String::deserialize(&mut stream)?;
-        let methods = u32::deserialize(&mut stream)?;
-        let subobjects = u16::deserialize(&mut stream)?;
-        Ok(ObjectInfoReply {
-            name,
-            version,
-            methods,
-            subobjects,
-        })
-    }
-
-    pub async fn set_x_calibration(&self, x_offset: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        x_offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 8, args.freeze())
+            .act(&self.address, 1, 3, 1, args.freeze())
             .await?;
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
@@ -65,30 +43,30 @@ impl NimbusCoreGripperXyCoord {
         Ok(())
     }
 
-    pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
+    pub async fn move_xy_absolute(&self, x_position: i32, y_position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        method.serialize(&mut args);
+        x_position.serialize(&mut args);
+        y_position.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
+            .act(&self.address, 1, 3, 2, args.freeze())
             .await?;
-        if count != 6 {
-            return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
-        let interfaceid = u8::deserialize(&mut stream)?;
-        let action = u8::deserialize(&mut stream)?;
-        let actionid = u16::deserialize(&mut stream)?;
-        let name = String::deserialize(&mut stream)?;
-        let parametertypes = String::deserialize(&mut stream)?;
-        let parameternames = String::deserialize(&mut stream)?;
-        Ok(MethodInfoReply {
-            interfaceid,
-            action,
-            actionid,
-            name,
-            parametertypes,
-            parameternames,
-        })
+        Ok(())
+    }
+
+    pub async fn initialize_x(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 3, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
     }
 
     pub async fn move_x_absolute(&self, x_position: i32) -> Result<(), Error> {
@@ -102,36 +80,6 @@ impl NimbusCoreGripperXyCoord {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
         Ok(())
-    }
-
-    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
-        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
-        Ok(InterfaceDescriptorsReply {
-            interface_ids,
-            interface_descriptors,
-        })
-    }
-
-    pub async fn is_x_initialized(&self) -> Result<IsXInitializedReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 10, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let initialized = bool::deserialize(&mut stream)?;
-        Ok(IsXInitializedReply { initialized })
     }
 
     pub async fn move_x_relative_1(&self, x_distance: i32) -> Result<(), Error> {
@@ -160,81 +108,12 @@ impl NimbusCoreGripperXyCoord {
         Ok(())
     }
 
-    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
+    pub async fn move_y_absolute(&self, y_position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
-        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(EnumInfoReply {
-            enumeration_names,
-            number_enumeration_values,
-            enumeration_values,
-            enumeration_value_descriptions,
-        })
-    }
-
-    pub async fn initialize_x(&self) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 3, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
-        let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let struct_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_structure_elements = Vec::<u32>::deserialize(&mut stream)?;
-        let structure_element_types = Vec::<u8>::deserialize(&mut stream)?;
-        let structure_element_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(StructInfoReply {
-            struct_names,
-            number_structure_elements,
-            structure_element_types,
-            structure_element_descriptions,
-        })
-    }
-
-    pub async fn initialize_xy(&self) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 1, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn move_xy_absolute(&self, x_position: i32, y_position: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
         y_position.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
+            .act(&self.address, 1, 3, 6, args.freeze())
             .await?;
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
@@ -268,17 +147,43 @@ impl NimbusCoreGripperXyCoord {
         Ok(())
     }
 
-    pub async fn move_y_absolute(&self, y_position: i32) -> Result<(), Error> {
+    pub async fn set_x_calibration(&self, x_offset: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        y_position.serialize(&mut args);
+        x_offset.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
+            .act(&self.address, 1, 3, 8, args.freeze())
             .await?;
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
         Ok(())
+    }
+
+    pub async fn get_x_calibration(&self) -> Result<GetXCalibrationReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 9, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let x_offset = i32::deserialize(&mut stream)?;
+        Ok(GetXCalibrationReply { x_offset })
+    }
+
+    pub async fn is_x_initialized(&self) -> Result<IsXInitializedReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 10, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let initialized = bool::deserialize(&mut stream)?;
+        Ok(IsXInitializedReply { initialized })
     }
 
     pub async fn get_desired_position(&self) -> Result<GetDesiredPositionReply, Error> {
@@ -298,17 +203,51 @@ impl NimbusCoreGripperXyCoord {
         })
     }
 
-    pub async fn get_x_calibration(&self) -> Result<GetXCalibrationReply, Error> {
+    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 0, 9, args.freeze())
+            .act(&self.address, 0, 0, 1, args.freeze())
             .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
-        let x_offset = i32::deserialize(&mut stream)?;
-        Ok(GetXCalibrationReply { x_offset })
+        let name = String::deserialize(&mut stream)?;
+        let version = String::deserialize(&mut stream)?;
+        let methods = u32::deserialize(&mut stream)?;
+        let subobjects = u16::deserialize(&mut stream)?;
+        Ok(ObjectInfoReply {
+            name,
+            version,
+            methods,
+            subobjects,
+        })
+    }
+
+    pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
+        let mut args = BytesMut::new();
+        method.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 2, args.freeze())
+            .await?;
+        if count != 6 {
+            return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
+        }
+        let interfaceid = u8::deserialize(&mut stream)?;
+        let action = u8::deserialize(&mut stream)?;
+        let actionid = u16::deserialize(&mut stream)?;
+        let name = String::deserialize(&mut stream)?;
+        let parametertypes = String::deserialize(&mut stream)?;
+        let parameternames = String::deserialize(&mut stream)?;
+        Ok(MethodInfoReply {
+            interfaceid,
+            action,
+            actionid,
+            name,
+            parametertypes,
+            parameternames,
+        })
     }
 
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
@@ -330,6 +269,83 @@ impl NimbusCoreGripperXyCoord {
             object_id,
         })
     }
+
+    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 4, args.freeze())
+            .await?;
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        }
+        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
+        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
+        Ok(InterfaceDescriptorsReply {
+            interface_ids,
+            interface_descriptors,
+        })
+    }
+
+    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
+        let mut args = BytesMut::new();
+        interface_id.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 5, args.freeze())
+            .await?;
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        }
+        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
+        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(EnumInfoReply {
+            enumeration_names,
+            number_enumeration_values,
+            enumeration_values,
+            enumeration_value_descriptions,
+        })
+    }
+
+    pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
+        let mut args = BytesMut::new();
+        interface_id.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 6, args.freeze())
+            .await?;
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
+        }
+        let struct_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_structure_elements = Vec::<u32>::deserialize(&mut stream)?;
+        let structure_element_types = Vec::<u8>::deserialize(&mut stream)?;
+        let structure_element_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(StructInfoReply {
+            struct_names,
+            number_structure_elements,
+            structure_element_types,
+            structure_element_descriptions,
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct GetXCalibrationReply {
+    x_offset: i32,
+}
+
+#[derive(Clone, Debug)]
+pub struct IsXInitializedReply {
+    initialized: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct GetDesiredPositionReply {
+    x_position: i32,
+    y_position: i32,
 }
 
 #[derive(Clone, Debug)]
@@ -351,21 +367,23 @@ pub struct MethodInfoReply {
 }
 
 #[derive(Clone, Debug)]
+pub struct SubObjectInfoReply {
+    module_id: u16,
+    node_id: u16,
+    object_id: u16,
+}
+
+#[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
-pub struct IsXInitializedReply {
-    initialized: bool,
-}
-
-#[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
     number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
+    enumeration_values: Vec<i32>,
     enumeration_value_descriptions: Vec<String>,
 }
 
@@ -375,22 +393,4 @@ pub struct StructInfoReply {
     number_structure_elements: Vec<u32>,
     structure_element_types: Vec<u8>,
     structure_element_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct GetDesiredPositionReply {
-    x_position: i32,
-    y_position: i32,
-}
-
-#[derive(Clone, Debug)]
-pub struct GetXCalibrationReply {
-    x_offset: i32,
-}
-
-#[derive(Clone, Debug)]
-pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
 }

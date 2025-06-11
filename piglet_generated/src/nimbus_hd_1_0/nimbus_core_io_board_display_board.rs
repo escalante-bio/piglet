@@ -31,16 +31,30 @@ impl NimbusCoreIoBoardDisplayBoard {
         }
     }
 
-    pub async fn self_test(&self) -> Result<(), Error> {
+    pub async fn get_present(&self) -> Result</* present= */ bool, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
+            .act(&self.address, 1, 0, 1, args.freeze())
             .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        Ok(())
+        let present = bool::deserialize(&mut stream)?;
+        Ok(present)
+    }
+
+    pub async fn get_positions(&self) -> Result</* positions= */ u8, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 2, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let positions = u8::deserialize(&mut stream)?;
+        Ok(positions)
     }
 
     pub async fn set_lights(&self, lights: Vec<bool>) -> Result<(), Error> {
@@ -49,6 +63,45 @@ impl NimbusCoreIoBoardDisplayBoard {
         let (count, mut stream) = self
             .robot
             .act(&self.address, 1, 3, 3, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn get_lights(&self) -> Result</* lights= */ Vec<bool>, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 0, 4, args.freeze())
+            .await?;
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let lights = Vec::<bool>::deserialize(&mut stream)?;
+        Ok(lights)
+    }
+
+    pub async fn set_light(&self, position: u8, active: bool) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        position.serialize(&mut args);
+        active.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 5, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn self_test(&self) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 6, args.freeze())
             .await?;
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
@@ -103,6 +156,26 @@ impl NimbusCoreIoBoardDisplayBoard {
         })
     }
 
+    pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
+        let mut args = BytesMut::new();
+        subobject.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 3, args.freeze())
+            .await?;
+        if count != 3 {
+            return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
+        }
+        let module_id = u16::deserialize(&mut stream)?;
+        let node_id = u16::deserialize(&mut stream)?;
+        let object_id = u16::deserialize(&mut stream)?;
+        Ok(SubObjectInfoReply {
+            module_id,
+            node_id,
+            object_id,
+        })
+    }
+
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
@@ -132,7 +205,7 @@ impl NimbusCoreIoBoardDisplayBoard {
         }
         let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
         let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
         let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
         Ok(EnumInfoReply {
             enumeration_names,
@@ -140,19 +213,6 @@ impl NimbusCoreIoBoardDisplayBoard {
             enumeration_values,
             enumeration_value_descriptions,
         })
-    }
-
-    pub async fn get_present(&self) -> Result</* present= */ bool, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 1, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let present = bool::deserialize(&mut stream)?;
-        Ok(present)
     }
 
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
@@ -176,66 +236,6 @@ impl NimbusCoreIoBoardDisplayBoard {
             structure_element_descriptions,
         })
     }
-
-    pub async fn get_positions(&self) -> Result</* positions= */ u8, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 2, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let positions = u8::deserialize(&mut stream)?;
-        Ok(positions)
-    }
-
-    pub async fn set_light(&self, position: u8, active: bool) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        position.serialize(&mut args);
-        active.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 5, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
-        let mut args = BytesMut::new();
-        subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
-        if count != 3 {
-            return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
-        }
-        let module_id = u16::deserialize(&mut stream)?;
-        let node_id = u16::deserialize(&mut stream)?;
-        let object_id = u16::deserialize(&mut stream)?;
-        Ok(SubObjectInfoReply {
-            module_id,
-            node_id,
-            object_id,
-        })
-    }
-
-    pub async fn get_lights(&self) -> Result</* lights= */ Vec<bool>, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 4, args.freeze())
-            .await?;
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let lights = Vec::<bool>::deserialize(&mut stream)?;
-        Ok(lights)
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -257,6 +257,13 @@ pub struct MethodInfoReply {
 }
 
 #[derive(Clone, Debug)]
+pub struct SubObjectInfoReply {
+    module_id: u16,
+    node_id: u16,
+    object_id: u16,
+}
+
+#[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
@@ -266,7 +273,7 @@ pub struct InterfaceDescriptorsReply {
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
     number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
+    enumeration_values: Vec<i32>,
     enumeration_value_descriptions: Vec<String>,
 }
 
@@ -276,11 +283,4 @@ pub struct StructInfoReply {
     number_structure_elements: Vec<u32>,
     structure_element_types: Vec<u8>,
     structure_element_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
 }

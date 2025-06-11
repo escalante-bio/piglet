@@ -44,24 +44,43 @@ impl NimbusCoreGripperTeach {
         Ok(())
     }
 
-    pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
+    pub async fn w_move_relative(&self, offset: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        subobject.serialize(&mut args);
+        offset.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
+            .act(&self.address, 1, 3, 2, args.freeze())
             .await?;
-        if count != 3 {
-            return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
-        let module_id = u16::deserialize(&mut stream)?;
-        let node_id = u16::deserialize(&mut stream)?;
-        let object_id = u16::deserialize(&mut stream)?;
-        Ok(SubObjectInfoReply {
-            module_id,
-            node_id,
-            object_id,
-        })
+        Ok(())
+    }
+
+    pub async fn x_move_relative(&self, offset: i32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        offset.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 3, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn y_move_relative(&self, offset: i32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        offset.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 1, 3, 4, args.freeze())
+            .await?;
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
     }
 
     pub async fn z_move_relative(&self, offset: i32) -> Result<(), Error> {
@@ -90,36 +109,6 @@ impl NimbusCoreGripperTeach {
         Ok(())
     }
 
-    pub async fn x_move_relative(&self, offset: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 3, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
-        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
-        Ok(InterfaceDescriptorsReply {
-            interface_ids,
-            interface_descriptors,
-        })
-    }
-
     pub async fn get_velocity(&self) -> Result</* velocity= */ u32, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
@@ -133,30 +122,25 @@ impl NimbusCoreGripperTeach {
         Ok(velocity)
     }
 
-    pub async fn y_move_relative(&self, offset: i32) -> Result<(), Error> {
+    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        offset.serialize(&mut args);
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 1, 3, 4, args.freeze())
+            .act(&self.address, 0, 0, 1, args.freeze())
             .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        if count != 4 {
+            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
-        Ok(())
-    }
-
-    pub async fn w_move_relative(&self, offset: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
-            .await?;
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
+        let name = String::deserialize(&mut stream)?;
+        let version = String::deserialize(&mut stream)?;
+        let methods = u32::deserialize(&mut stream)?;
+        let subobjects = u16::deserialize(&mut stream)?;
+        Ok(ObjectInfoReply {
+            name,
+            version,
+            methods,
+            subobjects,
+        })
     }
 
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
@@ -185,24 +169,62 @@ impl NimbusCoreGripperTeach {
         })
     }
 
-    pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
+    pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
+        let mut args = BytesMut::new();
+        subobject.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 3, args.freeze())
+            .await?;
+        if count != 3 {
+            return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
+        }
+        let module_id = u16::deserialize(&mut stream)?;
+        let node_id = u16::deserialize(&mut stream)?;
+        let object_id = u16::deserialize(&mut stream)?;
+        Ok(SubObjectInfoReply {
+            module_id,
+            node_id,
+            object_id,
+        })
+    }
+
+    pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = self
             .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
+            .act(&self.address, 0, 0, 4, args.freeze())
+            .await?;
+        if count != 2 {
+            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
+        }
+        let interface_ids = Vec::<u8>::deserialize(&mut stream)?;
+        let interface_descriptors = Vec::<String>::deserialize(&mut stream)?;
+        Ok(InterfaceDescriptorsReply {
+            interface_ids,
+            interface_descriptors,
+        })
+    }
+
+    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
+        let mut args = BytesMut::new();
+        interface_id.serialize(&mut args);
+        let (count, mut stream) = self
+            .robot
+            .act(&self.address, 0, 0, 5, args.freeze())
             .await?;
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
-        let name = String::deserialize(&mut stream)?;
-        let version = String::deserialize(&mut stream)?;
-        let methods = u32::deserialize(&mut stream)?;
-        let subobjects = u16::deserialize(&mut stream)?;
-        Ok(ObjectInfoReply {
-            name,
-            version,
-            methods,
-            subobjects,
+        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
+        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
+        let enumeration_values = Vec::<i32>::deserialize(&mut stream)?;
+        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
+        Ok(EnumInfoReply {
+            enumeration_names,
+            number_enumeration_values,
+            enumeration_values,
+            enumeration_value_descriptions,
         })
     }
 
@@ -227,28 +249,24 @@ impl NimbusCoreGripperTeach {
             structure_element_descriptions,
         })
     }
+}
 
-    pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
-        let mut args = BytesMut::new();
-        interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
-        if count != 4 {
-            return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
-        }
-        let enumeration_names = Vec::<String>::deserialize(&mut stream)?;
-        let number_enumeration_values = Vec::<u32>::deserialize(&mut stream)?;
-        let enumeration_values = Vec::<i16>::deserialize(&mut stream)?;
-        let enumeration_value_descriptions = Vec::<String>::deserialize(&mut stream)?;
-        Ok(EnumInfoReply {
-            enumeration_names,
-            number_enumeration_values,
-            enumeration_values,
-            enumeration_value_descriptions,
-        })
-    }
+#[derive(Clone, Debug)]
+pub struct ObjectInfoReply {
+    name: String,
+    version: String,
+    methods: u32,
+    subobjects: u16,
+}
+
+#[derive(Clone, Debug)]
+pub struct MethodInfoReply {
+    interfaceid: u8,
+    action: u8,
+    actionid: u16,
+    name: String,
+    parametertypes: String,
+    parameternames: String,
 }
 
 #[derive(Clone, Debug)]
@@ -265,21 +283,11 @@ pub struct InterfaceDescriptorsReply {
 }
 
 #[derive(Clone, Debug)]
-pub struct MethodInfoReply {
-    interfaceid: u8,
-    action: u8,
-    actionid: u16,
-    name: String,
-    parametertypes: String,
-    parameternames: String,
-}
-
-#[derive(Clone, Debug)]
-pub struct ObjectInfoReply {
-    name: String,
-    version: String,
-    methods: u32,
-    subobjects: u16,
+pub struct EnumInfoReply {
+    enumeration_names: Vec<String>,
+    number_enumeration_values: Vec<u32>,
+    enumeration_values: Vec<i32>,
+    enumeration_value_descriptions: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -288,12 +296,4 @@ pub struct StructInfoReply {
     number_structure_elements: Vec<u32>,
     structure_element_types: Vec<u8>,
     structure_element_descriptions: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
-pub struct EnumInfoReply {
-    enumeration_names: Vec<String>,
-    number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i16>,
-    enumeration_value_descriptions: Vec<String>,
 }
