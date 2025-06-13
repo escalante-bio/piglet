@@ -108,7 +108,7 @@ dependencies = [
 
 [[package]]
 name = "piglet"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "piglet_client",
  "piglet_generated",
@@ -116,7 +116,7 @@ dependencies = [
 
 [[package]]
 name = "piglet_client"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -125,7 +125,7 @@ dependencies = [
 
 [[package]]
 name = "piglet_codegen"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "convert_case",
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "piglet_generated"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bytes",
