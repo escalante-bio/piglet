@@ -5,6 +5,14 @@
 This project is an independent, open-source initiative and is not affiliated with, endorsed by, or
 supported by Hamilton. Use it at your own risk.
 
+[![Crates.io][crates-badge]][crates-url]
+[![Apache 2.0 licensed][license-badge]][license-url]
+
+[crates-badge]: https://img.shields.io/crates/v/piglet.svg
+[crates-url]: https://crates.io/crates/piglet
+[license-badge]: https://img.shields.io/crates/l/piglet.svg?color=orange
+[license-url]: https://github.com/escalante-bio/piglet/blob/main/LICENSE.txt
+
 ## Compatibility
 
 While `piglet` has been primarily tested with a Nimbus HD (2021), it is easily extendable to the
@@ -52,15 +60,89 @@ async fn main() -> Result<(), anyhow::Error> {
             .set_channel_configuration(channel, vec![1, 3, 4], vec![true, false, false])
             .await?;
     }
+
+    // Coordinate system when facing the machine:
+    // -x is left
+    // -y is towards you
+    // -z is down
+    // 100 units is 1mm
+    // channel 1 is the far channel, channel 8 is the close channel
+
+    pipette.pickup_gripper_tool(
+        /* x= */ 55735,
+        /* y_position_1_st_channel= */ -26482,
+        /* y_position_2_nd_channel= */ -29403,
+        /* traverse_height= */ 18600,
+        /* z_start_position= */ 17756,
+        /* z_stop_position= */ 16756,
+        /* tip_type= */ 14,
+        /* first_channel_number= */ 7,
+        /* second_channel_number= */ 8,
+        /* tool_width= */ 200,
+    ).await?;
+
+    pipette.z_seek_obstacle(
+        /* tips_used= */ vec![0, 0, 0, 0, 0, 0, 1, 0],
+        /* x_position= */ vec![48086, 48086, 48086, 48086, 48086, 48086, 48086, 48086],
+        /* y_position= */ vec![-29150, -29150, -29150, -29150, -29150, -29150, -29150, -29150],
+        /* traverse_height= */ 18600,
+        /* obstacle_seek_height= */ vec![10943, 10943, 10943, 10943, 10943, 10943, 10943, 10943],
+        /* z_min_position= */ vec![10543, 10543, 10543, 10543, 10543, 10543, 10543, 10543],
+        /* z_final= */ 18600,
+        /* seek_speed= */ vec![12869, 12869, 12869, 12869, 12869, 12869, 12869, 12869],
+    ).await?;
+
+    pipette.pickup_plate(
+        /* x_position= */ 48086,
+        /* y_plate_center_position= */ -29150,
+        /* y_plate_width= */ 8120,
+        /* y_open_position= */ 8720,
+        /* y_grip_speed= */ 27780,
+        /* y_grip_strength= */ 250,
+        /* traverse_height= */ 18600,
+        /* z_grip_height= */ 10543,
+        /* z_final= */ 18600,
+        /* z_speed= */ 12869,
+    ).await?;
+
+    if !pipette.is_core_gripper_plate_gripped().await? {
+        anyhow::bail!("Expected to grip a plate");
+    }
+
+    pipette.drop_plate(
+        /* x_position= */ 48086,
+        /* x_acceleration= */ 4,
+        /* y_plate_center_position= */ -29150,
+        /* y_open_position= */ 8720,
+        /* traverse_height= */ 18600,
+        /* z_drop_height= */ 10543,
+        /* z_press_distance= */ 0,
+        /* z_final= */ 18600,
+        /* z_speed= */ 12869,
+    ).await?;
+
+    pipette.drop_gripper_tool(
+        /* x_position= */ 55735,
+        /* y_position_1_st_channel= */ -26482,
+        /* y_position_2_nd_channel= */ -29403,
+        /* traverse_height= */ 18600,
+        /* z_start_position= */ 15756,
+        /* z_stop_position= */ 14756,
+        /* z_final= */ 18600,
+        /* first_channel_number= */ 7,
+        /* second_channel_number= */ 8,
+    ).await?;
+
     pipette
         .move_to_position(
             vec![1, 1, 1, 1, 1, 1, 1, 1],
-            -5849,
+            55361,
             vec![-161, -4558, -8955, -13352, -17749, -22146, -26543, -30940],
-            vec![14600, 14600, 14600, 14600, 14600, 14600, 14600, 14600],
+            vec![23550, 23550, 23550, 23550, 23550, 23550, 23550, 23550],
         )
         .await?;
     lock.unlock_door().await?;
+
     Ok(())
 }
 ```
