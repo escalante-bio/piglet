@@ -95,7 +95,11 @@ impl RobotClient {
         } else {
             let code = ErrorCode::deserialize(&mut bytes)?;
             let message = String::deserialize(&mut bytes)?;
-            Err(CallError { code, source: destination.clone(), message })
+            Err(CallError {
+                code,
+                source: destination.clone(),
+                message,
+            })
         }
     }
 
@@ -157,7 +161,11 @@ impl RobotClient {
 
 #[derive(Debug)]
 pub enum Error {
-    CallError { code: ErrorCode, source: ObjectAddress, message: String },
+    CallError {
+        code: ErrorCode,
+        source: ObjectAddress,
+        message: String,
+    },
     ConnectionError(anyhow::Error),
 }
 
@@ -173,8 +181,14 @@ impl std::error::Error for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
-            CallError { code, source, message } => write!(
-                f, "Call to {} failed with code {:?}: {}", source, code, message
+            CallError {
+                code,
+                source,
+                message,
+            } => write!(
+                f,
+                "Call to {} failed with code {:?}: {}",
+                source, code, message
             ),
             ConnectionError(e) => write!(f, "{}", e.to_string()),
         }

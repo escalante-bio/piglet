@@ -33,10 +33,6 @@ impl ObjectAddress {
 
 impl std::fmt::Display for ObjectAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}-{}-{}",
-            self.module_id, self.node_id, self.object_id
-        )
+        write!(f, "{}-{}-{}", self.module_id, self.node_id, self.object_id)
     }
 }
