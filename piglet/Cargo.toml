@@ -9,5 +9,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-piglet_client = { path = "../piglet_client", version = "0.1.0" }
-piglet_generated = { path = "../piglet_generated/", version = "0.1.0" }
+piglet_client = { path = "../piglet_client", version = "0.2.0" }
+piglet_generated = { path = "../piglet_generated/", version = "0.2.0" }

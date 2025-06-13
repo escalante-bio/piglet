@@ -1,10 +1,10 @@
 [package]
 name = "piglet_codegen"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 
 [dependencies]
 anyhow = "1.0"
 convert_case = "0.8.0"
-piglet_client = { path = "../piglet_client" }
+piglet_client = { path = "../piglet_client", version = "0.2.0" }
 tokio = { version = "1", features = ["fs", "io-util", "macros", "rt-multi-thread"] }

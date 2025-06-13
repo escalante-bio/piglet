@@ -4,7 +4,7 @@ description = "A bare-bones client for controlling IP-based Hamilton robots"
 license = "Apache-2.0"
 readme = "../README.md"
 repository = "https://github.com/escalante-bio/piglet"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 
 [dependencies]
