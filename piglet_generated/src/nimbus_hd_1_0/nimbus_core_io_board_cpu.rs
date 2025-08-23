@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -62,13 +62,13 @@ impl NimbusCoreIoBoardCpu {
         Ok(())
     }
 
-    pub async fn download_write(&self, download_data: Vec<u8>) -> Result<(), Error> {
+    pub async fn download_write(&self, download_data: impl AsRef<[u8]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        download_data.serialize(&mut args);
+        download_data.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
             || {
-                let parameters = vec![format!("  download_data: {:?}", download_data)];
+                let parameters = vec![format!("  download_data: {:?}", download_data.as_ref())];
                 format!(
                     "in call to NimbusCoreIoBoardCpu.DownloadWrite(\n{}\n)",
                     parameters.join("\n")

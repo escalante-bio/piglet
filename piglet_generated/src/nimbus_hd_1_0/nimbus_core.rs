@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -34,27 +34,27 @@ impl NimbusCore {
     pub async fn initialize(
         &self,
 
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 1, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCore.Initialize(\n{}\n)",
@@ -72,27 +72,27 @@ impl NimbusCore {
     pub async fn initialize_smart(
         &self,
 
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 2, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCore.InitializeSmart(\n{}\n)",
@@ -178,22 +178,22 @@ impl NimbusCore {
 
         traverse_height: i32,
         x_position: i32,
-        cams_used: Vec<u16>,
-        cam_positions: Vec<i16>,
+        cams_used: impl AsRef<[u16]>,
+        cam_positions: impl AsRef<[i16]>,
     ) -> Result<ShiftAndScanRowReply, Error> {
         let mut args = BytesMut::new();
         traverse_height.serialize(&mut args);
         x_position.serialize(&mut args);
-        cams_used.serialize(&mut args);
-        cam_positions.serialize(&mut args);
+        cams_used.as_ref().serialize(&mut args);
+        cam_positions.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
             || {
                 let parameters = vec![
                     format!("  traverse_height: {:?}", traverse_height),
                     format!("  x_position: {:?}", x_position),
-                    format!("  cams_used: {:?}", cams_used),
-                    format!("  cam_positions: {:?}", cam_positions),
+                    format!("  cams_used: {:?}", cams_used.as_ref()),
+                    format!("  cam_positions: {:?}", cam_positions.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCore.ShiftAndScanRow(\n{}\n)",
@@ -525,16 +525,16 @@ impl NimbusCore {
         Ok(data)
     }
 
-    pub async fn set_data_store(&self, handle: i16, data: Vec<u8>) -> Result<(), Error> {
+    pub async fn set_data_store(&self, handle: i16, data: impl AsRef<[u8]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
         handle.serialize(&mut args);
-        data.serialize(&mut args);
+        data.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 24, args.freeze()).await,
             || {
                 let parameters = vec![
                     format!("  handle: {:?}", handle),
-                    format!("  data: {:?}", data),
+                    format!("  data: {:?}", data.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCore.SetDataStore(\n{}\n)",
@@ -628,30 +628,30 @@ impl NimbusCore {
     pub async fn initialize_roll(
         &self,
 
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
-        roll_distance: Vec<i32>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
+        roll_distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
-        roll_distance.serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
+        roll_distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 28, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
-                    format!("  roll_distance: {:?}", roll_distance),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
+                    format!("  roll_distance: {:?}", roll_distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCore.InitializeRoll(\n{}\n)",
@@ -669,30 +669,30 @@ impl NimbusCore {
     pub async fn initialize_smart_roll(
         &self,
 
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
-        roll_distance: Vec<i32>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
+        roll_distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
-        roll_distance.serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
+        roll_distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 29, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
-                    format!("  roll_distance: {:?}", roll_distance),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
+                    format!("  roll_distance: {:?}", roll_distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCore.InitializeSmartRoll(\n{}\n)",
@@ -980,14 +980,9 @@ impl TryFrom<i32> for DeviceId {
 
 impl PigletCodec for DeviceId {
     const TYPE_ID: u8 = 32;
+}
 
-    fn serialize(&self, stream: &mut BytesMut) {
-        stream.put_u8(Self::TYPE_ID);
-        stream.put_u8(0);
-        stream.put_u16_le(4);
-        stream.put_i32_le(*self as i32);
-    }
-
+impl PigletDeserialize for DeviceId {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -1004,17 +999,24 @@ impl PigletCodec for DeviceId {
     }
 }
 
-impl PigletCodec for MVec<Vec<DeviceId>> {
-    const TYPE_ID: u8 = 35;
-    fn serialize(&self, bytes: &mut BytesMut) {
-        bytes.put_u8(Self::TYPE_ID);
-        bytes.put_u8(0);
-        bytes.put_u16_le(4 * self.0.len() as u16);
-        for v in &self.0 {
-            bytes.put_i32_le(*v as i32);
-        }
+impl PigletSerialize for DeviceId {
+    fn serialize(&self, stream: &mut BytesMut) {
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(4);
+        stream.put_i32_le(*self as i32);
     }
+}
 
+impl PigletCodec for MSlice<'_, DeviceId> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletCodec for MVec<DeviceId> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletDeserialize for MVec<DeviceId> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -1031,6 +1033,17 @@ impl PigletCodec for MVec<Vec<DeviceId>> {
             arr.push(stream.get_i32_le().try_into()?);
         }
         Ok(MVec(arr))
+    }
+}
+
+impl PigletSerialize for MSlice<'_, DeviceId> {
+    fn serialize(&self, bytes: &mut BytesMut) {
+        bytes.put_u8(Self::TYPE_ID);
+        bytes.put_u8(0);
+        bytes.put_u16_le(4 * self.0.len() as u16);
+        for v in self.0.as_ref() {
+            bytes.put_i32_le(*v as i32);
+        }
     }
 }
 

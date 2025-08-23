@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -34,27 +34,27 @@ impl NimbusCorePipette {
     pub async fn initialize(
         &self,
 
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 1, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.Initialize(\n{}\n)",
@@ -72,27 +72,27 @@ impl NimbusCorePipette {
     pub async fn initialize_smart(
         &self,
 
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 2, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.InitializeSmart(\n{}\n)",
@@ -151,33 +151,33 @@ impl NimbusCorePipette {
     pub async fn pickup_tips(
         &self,
 
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        tip_type: Vec<u16>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        tip_type: impl AsRef<[u16]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        tip_type.serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        tip_type.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 4, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  tip_type: {:?}", tip_type),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  tip_type: {:?}", tip_type.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.PickupTips(\n{}\n)",
@@ -195,35 +195,35 @@ impl NimbusCorePipette {
     pub async fn drop_tips(
         &self,
 
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
         default_waste: bool,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
         default_waste.serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
                     format!("  default_waste: {:?}", default_waste),
                 ];
                 format!(
@@ -242,113 +242,125 @@ impl NimbusCorePipette {
     pub async fn aspirate_1(
         &self,
 
-        aspirate_type: Vec<i16>,
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        aspirate_type: impl AsRef<[i16]>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        liquid_seek_height: Vec<i32>,
-        liquid_surface_height: Vec<i32>,
-        submerge_depth: Vec<i32>,
-        follow_depth: Vec<i32>,
-        z_min_position: Vec<i32>,
-        clot_check_height: Vec<i32>,
+        liquid_seek_height: impl AsRef<[i32]>,
+        liquid_surface_height: impl AsRef<[i32]>,
+        submerge_depth: impl AsRef<[i32]>,
+        follow_depth: impl AsRef<[i32]>,
+        z_min_position: impl AsRef<[i32]>,
+        clot_check_height: impl AsRef<[i32]>,
         z_final: i32,
-        liquid_exit_speed: Vec<u32>,
-        blowout_volume: Vec<u32>,
-        prewet_volume: Vec<u32>,
-        aspirate_volume: Vec<u32>,
-        transport_air_volume: Vec<u32>,
-        aspirate_speed: Vec<u32>,
-        settling_time: Vec<u32>,
-        mix_volume: Vec<u32>,
-        mix_cycles: Vec<u32>,
-        mix_position: Vec<i32>,
-        mix_follow_distance: Vec<i32>,
-        mix_speed: Vec<u32>,
-        tube_section_height: Vec<i32>,
-        tube_section_ratio: Vec<i32>,
-        lld_mode: Vec<i16>,
-        capacitive_lld_sensitivity: Vec<i16>,
-        pressure_lld_sensitivity: Vec<i16>,
-        lld_height_difference: Vec<i32>,
+        liquid_exit_speed: impl AsRef<[u32]>,
+        blowout_volume: impl AsRef<[u32]>,
+        prewet_volume: impl AsRef<[u32]>,
+        aspirate_volume: impl AsRef<[u32]>,
+        transport_air_volume: impl AsRef<[u32]>,
+        aspirate_speed: impl AsRef<[u32]>,
+        settling_time: impl AsRef<[u32]>,
+        mix_volume: impl AsRef<[u32]>,
+        mix_cycles: impl AsRef<[u32]>,
+        mix_position: impl AsRef<[i32]>,
+        mix_follow_distance: impl AsRef<[i32]>,
+        mix_speed: impl AsRef<[u32]>,
+        tube_section_height: impl AsRef<[i32]>,
+        tube_section_ratio: impl AsRef<[i32]>,
+        lld_mode: impl AsRef<[i16]>,
+        capacitive_lld_sensitivity: impl AsRef<[i16]>,
+        pressure_lld_sensitivity: impl AsRef<[i16]>,
+        lld_height_difference: impl AsRef<[i32]>,
         tadm_enabled: bool,
-        limit_curve_index: Vec<u32>,
+        limit_curve_index: impl AsRef<[u32]>,
         recording_mode: u16,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        aspirate_type.serialize(&mut args);
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        aspirate_type.as_ref().serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        liquid_seek_height.serialize(&mut args);
-        liquid_surface_height.serialize(&mut args);
-        submerge_depth.serialize(&mut args);
-        follow_depth.serialize(&mut args);
-        z_min_position.serialize(&mut args);
-        clot_check_height.serialize(&mut args);
+        liquid_seek_height.as_ref().serialize(&mut args);
+        liquid_surface_height.as_ref().serialize(&mut args);
+        submerge_depth.as_ref().serialize(&mut args);
+        follow_depth.as_ref().serialize(&mut args);
+        z_min_position.as_ref().serialize(&mut args);
+        clot_check_height.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        liquid_exit_speed.serialize(&mut args);
-        blowout_volume.serialize(&mut args);
-        prewet_volume.serialize(&mut args);
-        aspirate_volume.serialize(&mut args);
-        transport_air_volume.serialize(&mut args);
-        aspirate_speed.serialize(&mut args);
-        settling_time.serialize(&mut args);
-        mix_volume.serialize(&mut args);
-        mix_cycles.serialize(&mut args);
-        mix_position.serialize(&mut args);
-        mix_follow_distance.serialize(&mut args);
-        mix_speed.serialize(&mut args);
-        tube_section_height.serialize(&mut args);
-        tube_section_ratio.serialize(&mut args);
-        lld_mode.serialize(&mut args);
-        capacitive_lld_sensitivity.serialize(&mut args);
-        pressure_lld_sensitivity.serialize(&mut args);
-        lld_height_difference.serialize(&mut args);
+        liquid_exit_speed.as_ref().serialize(&mut args);
+        blowout_volume.as_ref().serialize(&mut args);
+        prewet_volume.as_ref().serialize(&mut args);
+        aspirate_volume.as_ref().serialize(&mut args);
+        transport_air_volume.as_ref().serialize(&mut args);
+        aspirate_speed.as_ref().serialize(&mut args);
+        settling_time.as_ref().serialize(&mut args);
+        mix_volume.as_ref().serialize(&mut args);
+        mix_cycles.as_ref().serialize(&mut args);
+        mix_position.as_ref().serialize(&mut args);
+        mix_follow_distance.as_ref().serialize(&mut args);
+        mix_speed.as_ref().serialize(&mut args);
+        tube_section_height.as_ref().serialize(&mut args);
+        tube_section_ratio.as_ref().serialize(&mut args);
+        lld_mode.as_ref().serialize(&mut args);
+        capacitive_lld_sensitivity.as_ref().serialize(&mut args);
+        pressure_lld_sensitivity.as_ref().serialize(&mut args);
+        lld_height_difference.as_ref().serialize(&mut args);
         tadm_enabled.serialize(&mut args);
-        limit_curve_index.serialize(&mut args);
+        limit_curve_index.as_ref().serialize(&mut args);
         recording_mode.serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  aspirate_type: {:?}", aspirate_type),
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  aspirate_type: {:?}", aspirate_type.as_ref()),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  liquid_seek_height: {:?}", liquid_seek_height),
-                    format!("  liquid_surface_height: {:?}", liquid_surface_height),
-                    format!("  submerge_depth: {:?}", submerge_depth),
-                    format!("  follow_depth: {:?}", follow_depth),
-                    format!("  z_min_position: {:?}", z_min_position),
-                    format!("  clot_check_height: {:?}", clot_check_height),
+                    format!("  liquid_seek_height: {:?}", liquid_seek_height.as_ref()),
+                    format!(
+                        "  liquid_surface_height: {:?}",
+                        liquid_surface_height.as_ref()
+                    ),
+                    format!("  submerge_depth: {:?}", submerge_depth.as_ref()),
+                    format!("  follow_depth: {:?}", follow_depth.as_ref()),
+                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
+                    format!("  clot_check_height: {:?}", clot_check_height.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
-                    format!("  blowout_volume: {:?}", blowout_volume),
-                    format!("  prewet_volume: {:?}", prewet_volume),
-                    format!("  aspirate_volume: {:?}", aspirate_volume),
-                    format!("  transport_air_volume: {:?}", transport_air_volume),
-                    format!("  aspirate_speed: {:?}", aspirate_speed),
-                    format!("  settling_time: {:?}", settling_time),
-                    format!("  mix_volume: {:?}", mix_volume),
-                    format!("  mix_cycles: {:?}", mix_cycles),
-                    format!("  mix_position: {:?}", mix_position),
-                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
-                    format!("  mix_speed: {:?}", mix_speed),
-                    format!("  tube_section_height: {:?}", tube_section_height),
-                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
-                    format!("  lld_mode: {:?}", lld_mode),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed.as_ref()),
+                    format!("  blowout_volume: {:?}", blowout_volume.as_ref()),
+                    format!("  prewet_volume: {:?}", prewet_volume.as_ref()),
+                    format!("  aspirate_volume: {:?}", aspirate_volume.as_ref()),
+                    format!(
+                        "  transport_air_volume: {:?}",
+                        transport_air_volume.as_ref()
+                    ),
+                    format!("  aspirate_speed: {:?}", aspirate_speed.as_ref()),
+                    format!("  settling_time: {:?}", settling_time.as_ref()),
+                    format!("  mix_volume: {:?}", mix_volume.as_ref()),
+                    format!("  mix_cycles: {:?}", mix_cycles.as_ref()),
+                    format!("  mix_position: {:?}", mix_position.as_ref()),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance.as_ref()),
+                    format!("  mix_speed: {:?}", mix_speed.as_ref()),
+                    format!("  tube_section_height: {:?}", tube_section_height.as_ref()),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio.as_ref()),
+                    format!("  lld_mode: {:?}", lld_mode.as_ref()),
                     format!(
                         "  capacitive_lld_sensitivity: {:?}",
-                        capacitive_lld_sensitivity
+                        capacitive_lld_sensitivity.as_ref()
                     ),
-                    format!("  pressure_lld_sensitivity: {:?}", pressure_lld_sensitivity),
-                    format!("  lld_height_difference: {:?}", lld_height_difference),
+                    format!(
+                        "  pressure_lld_sensitivity: {:?}",
+                        pressure_lld_sensitivity.as_ref()
+                    ),
+                    format!(
+                        "  lld_height_difference: {:?}",
+                        lld_height_difference.as_ref()
+                    ),
                     format!("  tadm_enabled: {:?}", tadm_enabled),
-                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  limit_curve_index: {:?}", limit_curve_index.as_ref()),
                     format!("  recording_mode: {:?}", recording_mode),
                 ];
                 format!(
@@ -367,113 +379,125 @@ impl NimbusCorePipette {
     pub async fn aspirate_2(
         &self,
 
-        aspirate_type: Vec<i16>,
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        aspirate_type: impl AsRef<[i16]>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        liquid_seek_height: Vec<i32>,
-        liquid_surface_height: Vec<i32>,
-        submerge_depth: Vec<i32>,
-        follow_depth: Vec<i32>,
-        z_min_position: Vec<i32>,
-        clot_check_height: Vec<i32>,
+        liquid_seek_height: impl AsRef<[i32]>,
+        liquid_surface_height: impl AsRef<[i32]>,
+        submerge_depth: impl AsRef<[i32]>,
+        follow_depth: impl AsRef<[i32]>,
+        z_min_position: impl AsRef<[i32]>,
+        clot_check_height: impl AsRef<[i32]>,
         z_final: i32,
-        liquid_exit_speed: Vec<u32>,
-        blowout_volume: Vec<u32>,
-        prewet_volume: Vec<u32>,
-        aspirate_volume: Vec<u32>,
-        transport_air_volume: Vec<u32>,
-        aspirate_speed: Vec<u32>,
-        settling_time: Vec<u32>,
-        mix_volume: Vec<u32>,
-        mix_cycles: Vec<u32>,
-        mix_position: Vec<i32>,
-        mix_follow_distance: Vec<i32>,
-        mix_speed: Vec<u32>,
-        tube_section_height: Vec<i32>,
-        tube_section_ratio: Vec<i32>,
-        lld_mode: Vec<i16>,
-        capacitive_lld_sensitivity: Vec<i16>,
-        pressure_lld_sensitivity: Vec<i16>,
-        lld_height_difference: Vec<i32>,
+        liquid_exit_speed: impl AsRef<[u32]>,
+        blowout_volume: impl AsRef<[u32]>,
+        prewet_volume: impl AsRef<[u32]>,
+        aspirate_volume: impl AsRef<[u32]>,
+        transport_air_volume: impl AsRef<[u32]>,
+        aspirate_speed: impl AsRef<[u32]>,
+        settling_time: impl AsRef<[u32]>,
+        mix_volume: impl AsRef<[u32]>,
+        mix_cycles: impl AsRef<[u32]>,
+        mix_position: impl AsRef<[i32]>,
+        mix_follow_distance: impl AsRef<[i32]>,
+        mix_speed: impl AsRef<[u32]>,
+        tube_section_height: impl AsRef<[i32]>,
+        tube_section_ratio: impl AsRef<[i32]>,
+        lld_mode: impl AsRef<[i16]>,
+        capacitive_lld_sensitivity: impl AsRef<[i16]>,
+        pressure_lld_sensitivity: impl AsRef<[i16]>,
+        lld_height_difference: impl AsRef<[i32]>,
         tadm_enabled: bool,
-        limit_curve_index: Vec<u32>,
+        limit_curve_index: impl AsRef<[u32]>,
         recording_mode: u16,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        aspirate_type.serialize(&mut args);
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        aspirate_type.as_ref().serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        liquid_seek_height.serialize(&mut args);
-        liquid_surface_height.serialize(&mut args);
-        submerge_depth.serialize(&mut args);
-        follow_depth.serialize(&mut args);
-        z_min_position.serialize(&mut args);
-        clot_check_height.serialize(&mut args);
+        liquid_seek_height.as_ref().serialize(&mut args);
+        liquid_surface_height.as_ref().serialize(&mut args);
+        submerge_depth.as_ref().serialize(&mut args);
+        follow_depth.as_ref().serialize(&mut args);
+        z_min_position.as_ref().serialize(&mut args);
+        clot_check_height.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        liquid_exit_speed.serialize(&mut args);
-        blowout_volume.serialize(&mut args);
-        prewet_volume.serialize(&mut args);
-        aspirate_volume.serialize(&mut args);
-        transport_air_volume.serialize(&mut args);
-        aspirate_speed.serialize(&mut args);
-        settling_time.serialize(&mut args);
-        mix_volume.serialize(&mut args);
-        mix_cycles.serialize(&mut args);
-        mix_position.serialize(&mut args);
-        mix_follow_distance.serialize(&mut args);
-        mix_speed.serialize(&mut args);
-        tube_section_height.serialize(&mut args);
-        tube_section_ratio.serialize(&mut args);
-        lld_mode.serialize(&mut args);
-        capacitive_lld_sensitivity.serialize(&mut args);
-        pressure_lld_sensitivity.serialize(&mut args);
-        lld_height_difference.serialize(&mut args);
+        liquid_exit_speed.as_ref().serialize(&mut args);
+        blowout_volume.as_ref().serialize(&mut args);
+        prewet_volume.as_ref().serialize(&mut args);
+        aspirate_volume.as_ref().serialize(&mut args);
+        transport_air_volume.as_ref().serialize(&mut args);
+        aspirate_speed.as_ref().serialize(&mut args);
+        settling_time.as_ref().serialize(&mut args);
+        mix_volume.as_ref().serialize(&mut args);
+        mix_cycles.as_ref().serialize(&mut args);
+        mix_position.as_ref().serialize(&mut args);
+        mix_follow_distance.as_ref().serialize(&mut args);
+        mix_speed.as_ref().serialize(&mut args);
+        tube_section_height.as_ref().serialize(&mut args);
+        tube_section_ratio.as_ref().serialize(&mut args);
+        lld_mode.as_ref().serialize(&mut args);
+        capacitive_lld_sensitivity.as_ref().serialize(&mut args);
+        pressure_lld_sensitivity.as_ref().serialize(&mut args);
+        lld_height_difference.as_ref().serialize(&mut args);
         tadm_enabled.serialize(&mut args);
-        limit_curve_index.serialize(&mut args);
+        limit_curve_index.as_ref().serialize(&mut args);
         recording_mode.serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  aspirate_type: {:?}", aspirate_type),
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  aspirate_type: {:?}", aspirate_type.as_ref()),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  liquid_seek_height: {:?}", liquid_seek_height),
-                    format!("  liquid_surface_height: {:?}", liquid_surface_height),
-                    format!("  submerge_depth: {:?}", submerge_depth),
-                    format!("  follow_depth: {:?}", follow_depth),
-                    format!("  z_min_position: {:?}", z_min_position),
-                    format!("  clot_check_height: {:?}", clot_check_height),
+                    format!("  liquid_seek_height: {:?}", liquid_seek_height.as_ref()),
+                    format!(
+                        "  liquid_surface_height: {:?}",
+                        liquid_surface_height.as_ref()
+                    ),
+                    format!("  submerge_depth: {:?}", submerge_depth.as_ref()),
+                    format!("  follow_depth: {:?}", follow_depth.as_ref()),
+                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
+                    format!("  clot_check_height: {:?}", clot_check_height.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
-                    format!("  blowout_volume: {:?}", blowout_volume),
-                    format!("  prewet_volume: {:?}", prewet_volume),
-                    format!("  aspirate_volume: {:?}", aspirate_volume),
-                    format!("  transport_air_volume: {:?}", transport_air_volume),
-                    format!("  aspirate_speed: {:?}", aspirate_speed),
-                    format!("  settling_time: {:?}", settling_time),
-                    format!("  mix_volume: {:?}", mix_volume),
-                    format!("  mix_cycles: {:?}", mix_cycles),
-                    format!("  mix_position: {:?}", mix_position),
-                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
-                    format!("  mix_speed: {:?}", mix_speed),
-                    format!("  tube_section_height: {:?}", tube_section_height),
-                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
-                    format!("  lld_mode: {:?}", lld_mode),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed.as_ref()),
+                    format!("  blowout_volume: {:?}", blowout_volume.as_ref()),
+                    format!("  prewet_volume: {:?}", prewet_volume.as_ref()),
+                    format!("  aspirate_volume: {:?}", aspirate_volume.as_ref()),
+                    format!(
+                        "  transport_air_volume: {:?}",
+                        transport_air_volume.as_ref()
+                    ),
+                    format!("  aspirate_speed: {:?}", aspirate_speed.as_ref()),
+                    format!("  settling_time: {:?}", settling_time.as_ref()),
+                    format!("  mix_volume: {:?}", mix_volume.as_ref()),
+                    format!("  mix_cycles: {:?}", mix_cycles.as_ref()),
+                    format!("  mix_position: {:?}", mix_position.as_ref()),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance.as_ref()),
+                    format!("  mix_speed: {:?}", mix_speed.as_ref()),
+                    format!("  tube_section_height: {:?}", tube_section_height.as_ref()),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio.as_ref()),
+                    format!("  lld_mode: {:?}", lld_mode.as_ref()),
                     format!(
                         "  capacitive_lld_sensitivity: {:?}",
-                        capacitive_lld_sensitivity
+                        capacitive_lld_sensitivity.as_ref()
                     ),
-                    format!("  pressure_lld_sensitivity: {:?}", pressure_lld_sensitivity),
-                    format!("  lld_height_difference: {:?}", lld_height_difference),
+                    format!(
+                        "  pressure_lld_sensitivity: {:?}",
+                        pressure_lld_sensitivity.as_ref()
+                    ),
+                    format!(
+                        "  lld_height_difference: {:?}",
+                        lld_height_difference.as_ref()
+                    ),
                     format!("  tadm_enabled: {:?}", tadm_enabled),
-                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  limit_curve_index: {:?}", limit_curve_index.as_ref()),
                     format!("  recording_mode: {:?}", recording_mode),
                 ];
                 format!(
@@ -492,113 +516,116 @@ impl NimbusCorePipette {
     pub async fn dispense(
         &self,
 
-        dispense_type: Vec<i16>,
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        dispense_type: impl AsRef<[i16]>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        liquid_seek_height: Vec<i32>,
-        dispense_height: Vec<i32>,
-        submerge_depth: Vec<i32>,
-        follow_depth: Vec<i32>,
-        z_min_position: Vec<i32>,
+        liquid_seek_height: impl AsRef<[i32]>,
+        dispense_height: impl AsRef<[i32]>,
+        submerge_depth: impl AsRef<[i32]>,
+        follow_depth: impl AsRef<[i32]>,
+        z_min_position: impl AsRef<[i32]>,
         z_final: i32,
-        liquid_exit_speed: Vec<u32>,
-        transport_air_volume: Vec<u32>,
-        dispense_volume: Vec<u32>,
-        stop_back_volume: Vec<u32>,
-        blowout_volume: Vec<u32>,
-        dispense_speed: Vec<u32>,
-        cutoff_speed: Vec<u32>,
-        settling_time: Vec<u32>,
-        mix_volume: Vec<u32>,
-        mix_cycles: Vec<u32>,
-        mix_position: Vec<i32>,
-        mix_follow_distance: Vec<i32>,
-        mix_speed: Vec<u32>,
+        liquid_exit_speed: impl AsRef<[u32]>,
+        transport_air_volume: impl AsRef<[u32]>,
+        dispense_volume: impl AsRef<[u32]>,
+        stop_back_volume: impl AsRef<[u32]>,
+        blowout_volume: impl AsRef<[u32]>,
+        dispense_speed: impl AsRef<[u32]>,
+        cutoff_speed: impl AsRef<[u32]>,
+        settling_time: impl AsRef<[u32]>,
+        mix_volume: impl AsRef<[u32]>,
+        mix_cycles: impl AsRef<[u32]>,
+        mix_position: impl AsRef<[i32]>,
+        mix_follow_distance: impl AsRef<[i32]>,
+        mix_speed: impl AsRef<[u32]>,
         touch_off_distance: i32,
-        dispense_offset: Vec<i32>,
-        tube_section_height: Vec<i32>,
-        tube_section_ratio: Vec<i32>,
-        lld_mode: Vec<i16>,
-        capacitive_lld_sensitivity: Vec<i16>,
+        dispense_offset: impl AsRef<[i32]>,
+        tube_section_height: impl AsRef<[i32]>,
+        tube_section_ratio: impl AsRef<[i32]>,
+        lld_mode: impl AsRef<[i16]>,
+        capacitive_lld_sensitivity: impl AsRef<[i16]>,
         tadm_enabled: bool,
-        limit_curve_index: Vec<u32>,
+        limit_curve_index: impl AsRef<[u32]>,
         recording_mode: u16,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        dispense_type.serialize(&mut args);
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        dispense_type.as_ref().serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        liquid_seek_height.serialize(&mut args);
-        dispense_height.serialize(&mut args);
-        submerge_depth.serialize(&mut args);
-        follow_depth.serialize(&mut args);
-        z_min_position.serialize(&mut args);
+        liquid_seek_height.as_ref().serialize(&mut args);
+        dispense_height.as_ref().serialize(&mut args);
+        submerge_depth.as_ref().serialize(&mut args);
+        follow_depth.as_ref().serialize(&mut args);
+        z_min_position.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        liquid_exit_speed.serialize(&mut args);
-        transport_air_volume.serialize(&mut args);
-        dispense_volume.serialize(&mut args);
-        stop_back_volume.serialize(&mut args);
-        blowout_volume.serialize(&mut args);
-        dispense_speed.serialize(&mut args);
-        cutoff_speed.serialize(&mut args);
-        settling_time.serialize(&mut args);
-        mix_volume.serialize(&mut args);
-        mix_cycles.serialize(&mut args);
-        mix_position.serialize(&mut args);
-        mix_follow_distance.serialize(&mut args);
-        mix_speed.serialize(&mut args);
+        liquid_exit_speed.as_ref().serialize(&mut args);
+        transport_air_volume.as_ref().serialize(&mut args);
+        dispense_volume.as_ref().serialize(&mut args);
+        stop_back_volume.as_ref().serialize(&mut args);
+        blowout_volume.as_ref().serialize(&mut args);
+        dispense_speed.as_ref().serialize(&mut args);
+        cutoff_speed.as_ref().serialize(&mut args);
+        settling_time.as_ref().serialize(&mut args);
+        mix_volume.as_ref().serialize(&mut args);
+        mix_cycles.as_ref().serialize(&mut args);
+        mix_position.as_ref().serialize(&mut args);
+        mix_follow_distance.as_ref().serialize(&mut args);
+        mix_speed.as_ref().serialize(&mut args);
         touch_off_distance.serialize(&mut args);
-        dispense_offset.serialize(&mut args);
-        tube_section_height.serialize(&mut args);
-        tube_section_ratio.serialize(&mut args);
-        lld_mode.serialize(&mut args);
-        capacitive_lld_sensitivity.serialize(&mut args);
+        dispense_offset.as_ref().serialize(&mut args);
+        tube_section_height.as_ref().serialize(&mut args);
+        tube_section_ratio.as_ref().serialize(&mut args);
+        lld_mode.as_ref().serialize(&mut args);
+        capacitive_lld_sensitivity.as_ref().serialize(&mut args);
         tadm_enabled.serialize(&mut args);
-        limit_curve_index.serialize(&mut args);
+        limit_curve_index.as_ref().serialize(&mut args);
         recording_mode.serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 7, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  dispense_type: {:?}", dispense_type),
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  dispense_type: {:?}", dispense_type.as_ref()),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  liquid_seek_height: {:?}", liquid_seek_height),
-                    format!("  dispense_height: {:?}", dispense_height),
-                    format!("  submerge_depth: {:?}", submerge_depth),
-                    format!("  follow_depth: {:?}", follow_depth),
-                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  liquid_seek_height: {:?}", liquid_seek_height.as_ref()),
+                    format!("  dispense_height: {:?}", dispense_height.as_ref()),
+                    format!("  submerge_depth: {:?}", submerge_depth.as_ref()),
+                    format!("  follow_depth: {:?}", follow_depth.as_ref()),
+                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
-                    format!("  transport_air_volume: {:?}", transport_air_volume),
-                    format!("  dispense_volume: {:?}", dispense_volume),
-                    format!("  stop_back_volume: {:?}", stop_back_volume),
-                    format!("  blowout_volume: {:?}", blowout_volume),
-                    format!("  dispense_speed: {:?}", dispense_speed),
-                    format!("  cutoff_speed: {:?}", cutoff_speed),
-                    format!("  settling_time: {:?}", settling_time),
-                    format!("  mix_volume: {:?}", mix_volume),
-                    format!("  mix_cycles: {:?}", mix_cycles),
-                    format!("  mix_position: {:?}", mix_position),
-                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
-                    format!("  mix_speed: {:?}", mix_speed),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed.as_ref()),
+                    format!(
+                        "  transport_air_volume: {:?}",
+                        transport_air_volume.as_ref()
+                    ),
+                    format!("  dispense_volume: {:?}", dispense_volume.as_ref()),
+                    format!("  stop_back_volume: {:?}", stop_back_volume.as_ref()),
+                    format!("  blowout_volume: {:?}", blowout_volume.as_ref()),
+                    format!("  dispense_speed: {:?}", dispense_speed.as_ref()),
+                    format!("  cutoff_speed: {:?}", cutoff_speed.as_ref()),
+                    format!("  settling_time: {:?}", settling_time.as_ref()),
+                    format!("  mix_volume: {:?}", mix_volume.as_ref()),
+                    format!("  mix_cycles: {:?}", mix_cycles.as_ref()),
+                    format!("  mix_position: {:?}", mix_position.as_ref()),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance.as_ref()),
+                    format!("  mix_speed: {:?}", mix_speed.as_ref()),
                     format!("  touch_off_distance: {:?}", touch_off_distance),
-                    format!("  dispense_offset: {:?}", dispense_offset),
-                    format!("  tube_section_height: {:?}", tube_section_height),
-                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
-                    format!("  lld_mode: {:?}", lld_mode),
+                    format!("  dispense_offset: {:?}", dispense_offset.as_ref()),
+                    format!("  tube_section_height: {:?}", tube_section_height.as_ref()),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio.as_ref()),
+                    format!("  lld_mode: {:?}", lld_mode.as_ref()),
                     format!(
                         "  capacitive_lld_sensitivity: {:?}",
-                        capacitive_lld_sensitivity
+                        capacitive_lld_sensitivity.as_ref()
                     ),
                     format!("  tadm_enabled: {:?}", tadm_enabled),
-                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  limit_curve_index: {:?}", limit_curve_index.as_ref()),
                     format!("  recording_mode: {:?}", recording_mode),
                 ];
                 format!(
@@ -617,137 +644,149 @@ impl NimbusCorePipette {
     pub async fn aspirate_and_dispense(
         &self,
 
-        aspirate_type: Vec<i16>,
-        dispense_type: Vec<i16>,
-        tips_used: Vec<u16>,
-        aspirate_dispense_pattern: Vec<i16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        aspirate_type: impl AsRef<[i16]>,
+        dispense_type: impl AsRef<[i16]>,
+        tips_used: impl AsRef<[u16]>,
+        aspirate_dispense_pattern: impl AsRef<[i16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        liquid_seek_height: Vec<i32>,
-        liquid_surface_height: Vec<i32>,
-        submerge_depth: Vec<i32>,
-        follow_depth: Vec<i32>,
-        z_min_position: Vec<i32>,
-        clot_check_height: Vec<i32>,
+        liquid_seek_height: impl AsRef<[i32]>,
+        liquid_surface_height: impl AsRef<[i32]>,
+        submerge_depth: impl AsRef<[i32]>,
+        follow_depth: impl AsRef<[i32]>,
+        z_min_position: impl AsRef<[i32]>,
+        clot_check_height: impl AsRef<[i32]>,
         z_final: i32,
-        liquid_exit_speed: Vec<u32>,
-        blowout_volume: Vec<u32>,
-        prewet_volume: Vec<u32>,
-        aspirate_volume: Vec<u32>,
-        transport_air_volume: Vec<u32>,
-        dispense_volume: Vec<u32>,
-        stop_back_volume: Vec<u32>,
-        aspirate_speed: Vec<u32>,
-        dispense_speed: Vec<u32>,
-        cutoff_speed: Vec<u32>,
-        settling_time: Vec<u32>,
-        mix_volume: Vec<u32>,
-        mix_cycles: Vec<u32>,
-        mix_position: Vec<i32>,
-        mix_follow_distance: Vec<i32>,
-        mix_speed: Vec<u32>,
-        dispense_offset: Vec<i32>,
-        tube_section_height: Vec<i32>,
-        tube_section_ratio: Vec<i32>,
-        lld_mode: Vec<i16>,
-        capacitive_lld_sensitivity: Vec<i16>,
-        pressure_lld_sensitivity: Vec<i16>,
-        lld_height_difference: Vec<i32>,
+        liquid_exit_speed: impl AsRef<[u32]>,
+        blowout_volume: impl AsRef<[u32]>,
+        prewet_volume: impl AsRef<[u32]>,
+        aspirate_volume: impl AsRef<[u32]>,
+        transport_air_volume: impl AsRef<[u32]>,
+        dispense_volume: impl AsRef<[u32]>,
+        stop_back_volume: impl AsRef<[u32]>,
+        aspirate_speed: impl AsRef<[u32]>,
+        dispense_speed: impl AsRef<[u32]>,
+        cutoff_speed: impl AsRef<[u32]>,
+        settling_time: impl AsRef<[u32]>,
+        mix_volume: impl AsRef<[u32]>,
+        mix_cycles: impl AsRef<[u32]>,
+        mix_position: impl AsRef<[i32]>,
+        mix_follow_distance: impl AsRef<[i32]>,
+        mix_speed: impl AsRef<[u32]>,
+        dispense_offset: impl AsRef<[i32]>,
+        tube_section_height: impl AsRef<[i32]>,
+        tube_section_ratio: impl AsRef<[i32]>,
+        lld_mode: impl AsRef<[i16]>,
+        capacitive_lld_sensitivity: impl AsRef<[i16]>,
+        pressure_lld_sensitivity: impl AsRef<[i16]>,
+        lld_height_difference: impl AsRef<[i32]>,
         tadm_enabled: bool,
-        limit_curve_index: Vec<u32>,
+        limit_curve_index: impl AsRef<[u32]>,
         recording_mode: u16,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        aspirate_type.serialize(&mut args);
-        dispense_type.serialize(&mut args);
-        tips_used.serialize(&mut args);
-        aspirate_dispense_pattern.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        aspirate_type.as_ref().serialize(&mut args);
+        dispense_type.as_ref().serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        aspirate_dispense_pattern.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        liquid_seek_height.serialize(&mut args);
-        liquid_surface_height.serialize(&mut args);
-        submerge_depth.serialize(&mut args);
-        follow_depth.serialize(&mut args);
-        z_min_position.serialize(&mut args);
-        clot_check_height.serialize(&mut args);
+        liquid_seek_height.as_ref().serialize(&mut args);
+        liquid_surface_height.as_ref().serialize(&mut args);
+        submerge_depth.as_ref().serialize(&mut args);
+        follow_depth.as_ref().serialize(&mut args);
+        z_min_position.as_ref().serialize(&mut args);
+        clot_check_height.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        liquid_exit_speed.serialize(&mut args);
-        blowout_volume.serialize(&mut args);
-        prewet_volume.serialize(&mut args);
-        aspirate_volume.serialize(&mut args);
-        transport_air_volume.serialize(&mut args);
-        dispense_volume.serialize(&mut args);
-        stop_back_volume.serialize(&mut args);
-        aspirate_speed.serialize(&mut args);
-        dispense_speed.serialize(&mut args);
-        cutoff_speed.serialize(&mut args);
-        settling_time.serialize(&mut args);
-        mix_volume.serialize(&mut args);
-        mix_cycles.serialize(&mut args);
-        mix_position.serialize(&mut args);
-        mix_follow_distance.serialize(&mut args);
-        mix_speed.serialize(&mut args);
-        dispense_offset.serialize(&mut args);
-        tube_section_height.serialize(&mut args);
-        tube_section_ratio.serialize(&mut args);
-        lld_mode.serialize(&mut args);
-        capacitive_lld_sensitivity.serialize(&mut args);
-        pressure_lld_sensitivity.serialize(&mut args);
-        lld_height_difference.serialize(&mut args);
+        liquid_exit_speed.as_ref().serialize(&mut args);
+        blowout_volume.as_ref().serialize(&mut args);
+        prewet_volume.as_ref().serialize(&mut args);
+        aspirate_volume.as_ref().serialize(&mut args);
+        transport_air_volume.as_ref().serialize(&mut args);
+        dispense_volume.as_ref().serialize(&mut args);
+        stop_back_volume.as_ref().serialize(&mut args);
+        aspirate_speed.as_ref().serialize(&mut args);
+        dispense_speed.as_ref().serialize(&mut args);
+        cutoff_speed.as_ref().serialize(&mut args);
+        settling_time.as_ref().serialize(&mut args);
+        mix_volume.as_ref().serialize(&mut args);
+        mix_cycles.as_ref().serialize(&mut args);
+        mix_position.as_ref().serialize(&mut args);
+        mix_follow_distance.as_ref().serialize(&mut args);
+        mix_speed.as_ref().serialize(&mut args);
+        dispense_offset.as_ref().serialize(&mut args);
+        tube_section_height.as_ref().serialize(&mut args);
+        tube_section_ratio.as_ref().serialize(&mut args);
+        lld_mode.as_ref().serialize(&mut args);
+        capacitive_lld_sensitivity.as_ref().serialize(&mut args);
+        pressure_lld_sensitivity.as_ref().serialize(&mut args);
+        lld_height_difference.as_ref().serialize(&mut args);
         tadm_enabled.serialize(&mut args);
-        limit_curve_index.serialize(&mut args);
+        limit_curve_index.as_ref().serialize(&mut args);
         recording_mode.serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 8, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  aspirate_type: {:?}", aspirate_type),
-                    format!("  dispense_type: {:?}", dispense_type),
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  aspirate_type: {:?}", aspirate_type.as_ref()),
+                    format!("  dispense_type: {:?}", dispense_type.as_ref()),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!(
                         "  aspirate_dispense_pattern: {:?}",
-                        aspirate_dispense_pattern
+                        aspirate_dispense_pattern.as_ref()
                     ),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  liquid_seek_height: {:?}", liquid_seek_height),
-                    format!("  liquid_surface_height: {:?}", liquid_surface_height),
-                    format!("  submerge_depth: {:?}", submerge_depth),
-                    format!("  follow_depth: {:?}", follow_depth),
-                    format!("  z_min_position: {:?}", z_min_position),
-                    format!("  clot_check_height: {:?}", clot_check_height),
+                    format!("  liquid_seek_height: {:?}", liquid_seek_height.as_ref()),
+                    format!(
+                        "  liquid_surface_height: {:?}",
+                        liquid_surface_height.as_ref()
+                    ),
+                    format!("  submerge_depth: {:?}", submerge_depth.as_ref()),
+                    format!("  follow_depth: {:?}", follow_depth.as_ref()),
+                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
+                    format!("  clot_check_height: {:?}", clot_check_height.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
-                    format!("  blowout_volume: {:?}", blowout_volume),
-                    format!("  prewet_volume: {:?}", prewet_volume),
-                    format!("  aspirate_volume: {:?}", aspirate_volume),
-                    format!("  transport_air_volume: {:?}", transport_air_volume),
-                    format!("  dispense_volume: {:?}", dispense_volume),
-                    format!("  stop_back_volume: {:?}", stop_back_volume),
-                    format!("  aspirate_speed: {:?}", aspirate_speed),
-                    format!("  dispense_speed: {:?}", dispense_speed),
-                    format!("  cutoff_speed: {:?}", cutoff_speed),
-                    format!("  settling_time: {:?}", settling_time),
-                    format!("  mix_volume: {:?}", mix_volume),
-                    format!("  mix_cycles: {:?}", mix_cycles),
-                    format!("  mix_position: {:?}", mix_position),
-                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
-                    format!("  mix_speed: {:?}", mix_speed),
-                    format!("  dispense_offset: {:?}", dispense_offset),
-                    format!("  tube_section_height: {:?}", tube_section_height),
-                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
-                    format!("  lld_mode: {:?}", lld_mode),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed.as_ref()),
+                    format!("  blowout_volume: {:?}", blowout_volume.as_ref()),
+                    format!("  prewet_volume: {:?}", prewet_volume.as_ref()),
+                    format!("  aspirate_volume: {:?}", aspirate_volume.as_ref()),
+                    format!(
+                        "  transport_air_volume: {:?}",
+                        transport_air_volume.as_ref()
+                    ),
+                    format!("  dispense_volume: {:?}", dispense_volume.as_ref()),
+                    format!("  stop_back_volume: {:?}", stop_back_volume.as_ref()),
+                    format!("  aspirate_speed: {:?}", aspirate_speed.as_ref()),
+                    format!("  dispense_speed: {:?}", dispense_speed.as_ref()),
+                    format!("  cutoff_speed: {:?}", cutoff_speed.as_ref()),
+                    format!("  settling_time: {:?}", settling_time.as_ref()),
+                    format!("  mix_volume: {:?}", mix_volume.as_ref()),
+                    format!("  mix_cycles: {:?}", mix_cycles.as_ref()),
+                    format!("  mix_position: {:?}", mix_position.as_ref()),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance.as_ref()),
+                    format!("  mix_speed: {:?}", mix_speed.as_ref()),
+                    format!("  dispense_offset: {:?}", dispense_offset.as_ref()),
+                    format!("  tube_section_height: {:?}", tube_section_height.as_ref()),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio.as_ref()),
+                    format!("  lld_mode: {:?}", lld_mode.as_ref()),
                     format!(
                         "  capacitive_lld_sensitivity: {:?}",
-                        capacitive_lld_sensitivity
+                        capacitive_lld_sensitivity.as_ref()
                     ),
-                    format!("  pressure_lld_sensitivity: {:?}", pressure_lld_sensitivity),
-                    format!("  lld_height_difference: {:?}", lld_height_difference),
+                    format!(
+                        "  pressure_lld_sensitivity: {:?}",
+                        pressure_lld_sensitivity.as_ref()
+                    ),
+                    format!(
+                        "  lld_height_difference: {:?}",
+                        lld_height_difference.as_ref()
+                    ),
                     format!("  tadm_enabled: {:?}", tadm_enabled),
-                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  limit_curve_index: {:?}", limit_curve_index.as_ref()),
                     format!("  recording_mode: {:?}", recording_mode),
                 ];
                 format!(
@@ -1146,27 +1185,27 @@ impl NimbusCorePipette {
     pub async fn move_over(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
-        y_position: Vec<i32>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        z_position: Vec<i32>,
+        z_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        z_position.serialize(&mut args);
+        z_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 22, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  z_position: {:?}", z_position),
+                    format!("  z_position: {:?}", z_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveOver(\n{}\n)",
@@ -1184,24 +1223,24 @@ impl NimbusCorePipette {
     pub async fn move_to_position(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
-        y_position: Vec<i32>,
-        z_position: Vec<i32>,
+        y_position: impl AsRef<[i32]>,
+        z_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_position.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 23, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_position: {:?}", z_position),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_position: {:?}", z_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveToPosition(\n{}\n)",
@@ -1219,23 +1258,23 @@ impl NimbusCorePipette {
     pub async fn move_to_position_via_lane(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
-        y_position: Vec<i32>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 24, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
                 ];
                 format!(
@@ -1254,21 +1293,21 @@ impl NimbusCorePipette {
     pub async fn move_absolute_xy(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
-        y_position: Vec<i32>,
+        y_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 25, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveAbsoluteXY(\n{}\n)",
@@ -1326,18 +1365,18 @@ impl NimbusCorePipette {
     pub async fn move_absolute_y(
         &self,
 
-        tips_used: Vec<u16>,
-        y_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        y_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        y_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 28, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveAbsoluteY(\n{}\n)",
@@ -1355,18 +1394,18 @@ impl NimbusCorePipette {
     pub async fn move_relative_y(
         &self,
 
-        tips_used: Vec<u16>,
-        y_distance: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        y_distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        y_distance.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        y_distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 29, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  y_distance: {:?}", y_distance),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  y_distance: {:?}", y_distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveRelativeY(\n{}\n)",
@@ -1384,18 +1423,18 @@ impl NimbusCorePipette {
     pub async fn move_absolute_z(
         &self,
 
-        tips_used: Vec<u16>,
-        z_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        z_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        z_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        z_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 30, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  z_position: {:?}", z_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  z_position: {:?}", z_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveAbsoluteZ(\n{}\n)",
@@ -1413,18 +1452,18 @@ impl NimbusCorePipette {
     pub async fn move_relative_z(
         &self,
 
-        tips_used: Vec<u16>,
-        z_distance: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        z_distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        z_distance.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        z_distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 31, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  z_distance: {:?}", z_distance),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  z_distance: {:?}", z_distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveRelativeZ(\n{}\n)",
@@ -1477,28 +1516,28 @@ impl NimbusCorePipette {
 
         channel: u16,
         name: String,
-        lower_limit_x: Vec<u16>,
-        lower_limit_y: Vec<i16>,
-        upper_limit_x: Vec<u16>,
-        upper_limit_y: Vec<i16>,
+        lower_limit_x: impl AsRef<[u16]>,
+        lower_limit_y: impl AsRef<[i16]>,
+        upper_limit_x: impl AsRef<[u16]>,
+        upper_limit_y: impl AsRef<[i16]>,
     ) -> Result<CreateLimitCurveReply, Error> {
         let mut args = BytesMut::new();
         channel.serialize(&mut args);
         name.serialize(&mut args);
-        lower_limit_x.serialize(&mut args);
-        lower_limit_y.serialize(&mut args);
-        upper_limit_x.serialize(&mut args);
-        upper_limit_y.serialize(&mut args);
+        lower_limit_x.as_ref().serialize(&mut args);
+        lower_limit_y.as_ref().serialize(&mut args);
+        upper_limit_x.as_ref().serialize(&mut args);
+        upper_limit_y.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 34, args.freeze()).await,
             || {
                 let parameters = vec![
                     format!("  channel: {:?}", channel),
                     format!("  name: {:?}", name),
-                    format!("  lower_limit_x: {:?}", lower_limit_x),
-                    format!("  lower_limit_y: {:?}", lower_limit_y),
-                    format!("  upper_limit_x: {:?}", upper_limit_x),
-                    format!("  upper_limit_y: {:?}", upper_limit_y),
+                    format!("  lower_limit_x: {:?}", lower_limit_x.as_ref()),
+                    format!("  lower_limit_y: {:?}", lower_limit_y.as_ref()),
+                    format!("  upper_limit_x: {:?}", upper_limit_x.as_ref()),
+                    format!("  upper_limit_y: {:?}", upper_limit_y.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.CreateLimitCurve(\n{}\n)",
@@ -1514,13 +1553,13 @@ impl NimbusCorePipette {
         Ok(CreateLimitCurveReply { index })
     }
 
-    pub async fn reset_tadm_fifo(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn reset_tadm_fifo(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 35, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.ResetTadmFifo(\n{}\n)",
                     parameters.join("\n")
@@ -1537,14 +1576,14 @@ impl NimbusCorePipette {
     pub async fn retrieve_tadm_data(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
     ) -> Result<RetrieveTadmDataReply, Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 36, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.RetrieveTadmData(\n{}\n)",
                     parameters.join("\n")
@@ -1624,18 +1663,18 @@ impl NimbusCorePipette {
     pub async fn set_tadm_enable(
         &self,
 
-        tips_used: Vec<u16>,
-        enable: Vec<i16>,
+        tips_used: impl AsRef<[u16]>,
+        enable: impl AsRef<[i16]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        enable.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        enable.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 39, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  enable: {:?}", enable),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  enable: {:?}", enable.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.SetTADMEnable(\n{}\n)",
@@ -1667,29 +1706,29 @@ impl NimbusCorePipette {
     pub async fn enable_mad(
         &self,
 
-        tips_used: Vec<u16>,
-        pressure_threshold: Vec<u16>,
-        minimum_pressure_difference: Vec<u16>,
-        maximum_pressure_difference: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
+        pressure_threshold: impl AsRef<[u16]>,
+        minimum_pressure_difference: impl AsRef<[u16]>,
+        maximum_pressure_difference: impl AsRef<[u16]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        pressure_threshold.serialize(&mut args);
-        minimum_pressure_difference.serialize(&mut args);
-        maximum_pressure_difference.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        pressure_threshold.as_ref().serialize(&mut args);
+        minimum_pressure_difference.as_ref().serialize(&mut args);
+        maximum_pressure_difference.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 41, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  pressure_threshold: {:?}", pressure_threshold),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  pressure_threshold: {:?}", pressure_threshold.as_ref()),
                     format!(
                         "  minimum_pressure_difference: {:?}",
-                        minimum_pressure_difference
+                        minimum_pressure_difference.as_ref()
                     ),
                     format!(
                         "  maximum_pressure_difference: {:?}",
-                        maximum_pressure_difference
+                        maximum_pressure_difference.as_ref()
                     ),
                 ];
                 format!(
@@ -1705,13 +1744,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn disable_mad(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn disable_mad(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 42, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.DisableMAD(\n{}\n)",
                     parameters.join("\n")
@@ -1725,13 +1764,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn enable_adc(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn enable_adc(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 43, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.EnableADC(\n{}\n)",
                     parameters.join("\n")
@@ -1745,13 +1784,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn disable_adc(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn disable_adc(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 44, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.DisableADC(\n{}\n)",
                     parameters.join("\n")
@@ -1768,18 +1807,18 @@ impl NimbusCorePipette {
     pub async fn move_traverse_z(
         &self,
 
-        tips_used: Vec<u16>,
-        z_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        z_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        z_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        z_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 45, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  z_position: {:?}", z_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  z_position: {:?}", z_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveTraverseZ(\n{}\n)",
@@ -1957,36 +1996,39 @@ impl NimbusCorePipette {
     pub async fn z_seek_obstacle(
         &self,
 
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        obstacle_seek_height: Vec<i32>,
-        z_min_position: Vec<i32>,
+        obstacle_seek_height: impl AsRef<[i32]>,
+        z_min_position: impl AsRef<[i32]>,
         z_final: i32,
-        seek_speed: Vec<u32>,
+        seek_speed: impl AsRef<[u32]>,
     ) -> Result</* obstacle_detected= */ Vec<i16>, Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        obstacle_seek_height.serialize(&mut args);
-        z_min_position.serialize(&mut args);
+        obstacle_seek_height.as_ref().serialize(&mut args);
+        z_min_position.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        seek_speed.serialize(&mut args);
+        seek_speed.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 49, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  obstacle_seek_height: {:?}", obstacle_seek_height),
-                    format!("  z_min_position: {:?}", z_min_position),
+                    format!(
+                        "  obstacle_seek_height: {:?}",
+                        obstacle_seek_height.as_ref()
+                    ),
+                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  seek_speed: {:?}", seek_speed),
+                    format!("  seek_speed: {:?}", seek_speed.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.ZSeekObstacle(\n{}\n)",
@@ -2074,13 +2116,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn initialize_y(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn initialize_y(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 54, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.InitializeY(\n{}\n)",
                     parameters.join("\n")
@@ -2094,13 +2136,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn initialize_z(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn initialize_z(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 55, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.InitializeZ(\n{}\n)",
                     parameters.join("\n")
@@ -2114,13 +2156,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn initialize_squeeze(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn initialize_squeeze(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 56, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.InitializeSqueeze(\n{}\n)",
                     parameters.join("\n")
@@ -2134,13 +2176,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn initialize_dispenser(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn initialize_dispenser(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 57, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.InitializeDispenser(\n{}\n)",
                     parameters.join("\n")
@@ -2154,13 +2196,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn squeeze_on(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn squeeze_on(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 58, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.SqueezeOn(\n{}\n)",
                     parameters.join("\n")
@@ -2174,13 +2216,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn squeeze_off(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn squeeze_off(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 59, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.SqueezeOff(\n{}\n)",
                     parameters.join("\n")
@@ -2194,13 +2236,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn empty_dispenser(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn empty_dispenser(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 60, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.EmptyDispenser(\n{}\n)",
                     parameters.join("\n")
@@ -2217,18 +2259,18 @@ impl NimbusCorePipette {
     pub async fn move_relative_dispenser(
         &self,
 
-        tips_used: Vec<u16>,
-        volumes: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        volumes: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        volumes.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        volumes.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 61, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  volumes: {:?}", volumes),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  volumes: {:?}", volumes.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveRelativeDispenser(\n{}\n)",
@@ -2246,63 +2288,63 @@ impl NimbusCorePipette {
     pub async fn multiple_dispense(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
         x_well_distance: i32,
         x_well_width: u32,
         x_number_of_wells: u16,
         x_velocity_scale: u16,
-        y_position: Vec<i32>,
-        y_well_distance: Vec<i32>,
-        volume: Vec<u32>,
-        tip_air_volume: Vec<u32>,
-        stop_back_volume: Vec<u32>,
-        dispense_speed: Vec<u32>,
-        cutoff_speed: Vec<u32>,
+        y_position: impl AsRef<[i32]>,
+        y_well_distance: impl AsRef<[i32]>,
+        volume: impl AsRef<[u32]>,
+        tip_air_volume: impl AsRef<[u32]>,
+        stop_back_volume: impl AsRef<[u32]>,
+        dispense_speed: impl AsRef<[u32]>,
+        cutoff_speed: impl AsRef<[u32]>,
         traverse_height: i32,
-        dispense_height: Vec<i32>,
+        dispense_height: impl AsRef<[i32]>,
         z_final: i32,
-        dispense_map: Vec<u16>,
+        dispense_map: impl AsRef<[u16]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
         x_well_distance.serialize(&mut args);
         x_well_width.serialize(&mut args);
         x_number_of_wells.serialize(&mut args);
         x_velocity_scale.serialize(&mut args);
-        y_position.serialize(&mut args);
-        y_well_distance.serialize(&mut args);
-        volume.serialize(&mut args);
-        tip_air_volume.serialize(&mut args);
-        stop_back_volume.serialize(&mut args);
-        dispense_speed.serialize(&mut args);
-        cutoff_speed.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        y_well_distance.as_ref().serialize(&mut args);
+        volume.as_ref().serialize(&mut args);
+        tip_air_volume.as_ref().serialize(&mut args);
+        stop_back_volume.as_ref().serialize(&mut args);
+        dispense_speed.as_ref().serialize(&mut args);
+        cutoff_speed.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        dispense_height.serialize(&mut args);
+        dispense_height.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        dispense_map.serialize(&mut args);
+        dispense_map.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 62, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
                     format!("  x_well_distance: {:?}", x_well_distance),
                     format!("  x_well_width: {:?}", x_well_width),
                     format!("  x_number_of_wells: {:?}", x_number_of_wells),
                     format!("  x_velocity_scale: {:?}", x_velocity_scale),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  y_well_distance: {:?}", y_well_distance),
-                    format!("  volume: {:?}", volume),
-                    format!("  tip_air_volume: {:?}", tip_air_volume),
-                    format!("  stop_back_volume: {:?}", stop_back_volume),
-                    format!("  dispense_speed: {:?}", dispense_speed),
-                    format!("  cutoff_speed: {:?}", cutoff_speed),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  y_well_distance: {:?}", y_well_distance.as_ref()),
+                    format!("  volume: {:?}", volume.as_ref()),
+                    format!("  tip_air_volume: {:?}", tip_air_volume.as_ref()),
+                    format!("  stop_back_volume: {:?}", stop_back_volume.as_ref()),
+                    format!("  dispense_speed: {:?}", dispense_speed.as_ref()),
+                    format!("  cutoff_speed: {:?}", cutoff_speed.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  dispense_height: {:?}", dispense_height),
+                    format!("  dispense_height: {:?}", dispense_height.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  dispense_map: {:?}", dispense_map),
+                    format!("  dispense_map: {:?}", dispense_map.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MultipleDispense(\n{}\n)",
@@ -2320,72 +2362,72 @@ impl NimbusCorePipette {
     pub async fn on_the_fly_dispense(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
         x_well_distance: i32,
         x_well_width: u32,
         x_number_of_wells: u16,
         x_velocity_scale: u16,
-        y_position: Vec<i32>,
-        y_well_distance: Vec<i32>,
-        volume: Vec<u32>,
-        tip_air_volume: Vec<u32>,
-        stop_back_volume: Vec<u32>,
-        dispense_speed: Vec<u32>,
-        cutoff_speed: Vec<u32>,
-        tadm_enabled: Vec<i16>,
-        limit_curve_index: Vec<u32>,
+        y_position: impl AsRef<[i32]>,
+        y_well_distance: impl AsRef<[i32]>,
+        volume: impl AsRef<[u32]>,
+        tip_air_volume: impl AsRef<[u32]>,
+        stop_back_volume: impl AsRef<[u32]>,
+        dispense_speed: impl AsRef<[u32]>,
+        cutoff_speed: impl AsRef<[u32]>,
+        tadm_enabled: impl AsRef<[i16]>,
+        limit_curve_index: impl AsRef<[u32]>,
         recording_mode: u16,
         traverse_height: i32,
-        dispense_height: Vec<i32>,
+        dispense_height: impl AsRef<[i32]>,
         z_final: i32,
-        dispense_map: Vec<u16>,
+        dispense_map: impl AsRef<[u16]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
         x_well_distance.serialize(&mut args);
         x_well_width.serialize(&mut args);
         x_number_of_wells.serialize(&mut args);
         x_velocity_scale.serialize(&mut args);
-        y_position.serialize(&mut args);
-        y_well_distance.serialize(&mut args);
-        volume.serialize(&mut args);
-        tip_air_volume.serialize(&mut args);
-        stop_back_volume.serialize(&mut args);
-        dispense_speed.serialize(&mut args);
-        cutoff_speed.serialize(&mut args);
-        tadm_enabled.serialize(&mut args);
-        limit_curve_index.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        y_well_distance.as_ref().serialize(&mut args);
+        volume.as_ref().serialize(&mut args);
+        tip_air_volume.as_ref().serialize(&mut args);
+        stop_back_volume.as_ref().serialize(&mut args);
+        dispense_speed.as_ref().serialize(&mut args);
+        cutoff_speed.as_ref().serialize(&mut args);
+        tadm_enabled.as_ref().serialize(&mut args);
+        limit_curve_index.as_ref().serialize(&mut args);
         recording_mode.serialize(&mut args);
         traverse_height.serialize(&mut args);
-        dispense_height.serialize(&mut args);
+        dispense_height.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        dispense_map.serialize(&mut args);
+        dispense_map.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 63, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
                     format!("  x_well_distance: {:?}", x_well_distance),
                     format!("  x_well_width: {:?}", x_well_width),
                     format!("  x_number_of_wells: {:?}", x_number_of_wells),
                     format!("  x_velocity_scale: {:?}", x_velocity_scale),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  y_well_distance: {:?}", y_well_distance),
-                    format!("  volume: {:?}", volume),
-                    format!("  tip_air_volume: {:?}", tip_air_volume),
-                    format!("  stop_back_volume: {:?}", stop_back_volume),
-                    format!("  dispense_speed: {:?}", dispense_speed),
-                    format!("  cutoff_speed: {:?}", cutoff_speed),
-                    format!("  tadm_enabled: {:?}", tadm_enabled),
-                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  y_well_distance: {:?}", y_well_distance.as_ref()),
+                    format!("  volume: {:?}", volume.as_ref()),
+                    format!("  tip_air_volume: {:?}", tip_air_volume.as_ref()),
+                    format!("  stop_back_volume: {:?}", stop_back_volume.as_ref()),
+                    format!("  dispense_speed: {:?}", dispense_speed.as_ref()),
+                    format!("  cutoff_speed: {:?}", cutoff_speed.as_ref()),
+                    format!("  tadm_enabled: {:?}", tadm_enabled.as_ref()),
+                    format!("  limit_curve_index: {:?}", limit_curve_index.as_ref()),
                     format!("  recording_mode: {:?}", recording_mode),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  dispense_height: {:?}", dispense_height),
+                    format!("  dispense_height: {:?}", dispense_height.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  dispense_map: {:?}", dispense_map),
+                    format!("  dispense_map: {:?}", dispense_map.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.OnTheFlyDispense(\n{}\n)",
@@ -2432,17 +2474,17 @@ impl NimbusCorePipette {
         &self,
 
         channel: u16,
-        indexes: Vec<i16>,
+        indexes: impl AsRef<[i16]>,
     ) -> Result<GetChannelConfigurationReply, Error> {
         let mut args = BytesMut::new();
         channel.serialize(&mut args);
-        indexes.serialize(&mut args);
+        indexes.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 0, 66, args.freeze()).await,
             || {
                 let parameters = vec![
                     format!("  channel: {:?}", channel),
-                    format!("  indexes: {:?}", indexes),
+                    format!("  indexes: {:?}", indexes.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.GetChannelConfiguration(\n{}\n)",
@@ -2462,20 +2504,20 @@ impl NimbusCorePipette {
         &self,
 
         channel: u16,
-        indexes: Vec<i16>,
-        enables: Vec<bool>,
+        indexes: impl AsRef<[i16]>,
+        enables: impl AsRef<[bool]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         channel.serialize(&mut args);
-        indexes.serialize(&mut args);
-        enables.serialize(&mut args);
+        indexes.as_ref().serialize(&mut args);
+        enables.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 67, args.freeze()).await,
             || {
                 let parameters = vec![
                     format!("  channel: {:?}", channel),
-                    format!("  indexes: {:?}", indexes),
-                    format!("  enables: {:?}", enables),
+                    format!("  indexes: {:?}", indexes.as_ref()),
+                    format!("  enables: {:?}", enables.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.SetChannelConfiguration(\n{}\n)",
@@ -2493,36 +2535,39 @@ impl NimbusCorePipette {
     pub async fn z_seek_obstacle_position(
         &self,
 
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        obstacle_seek_height: Vec<i32>,
-        z_min_position: Vec<i32>,
+        obstacle_seek_height: impl AsRef<[i32]>,
+        z_min_position: impl AsRef<[i32]>,
         z_final: i32,
-        seek_speed: Vec<u32>,
+        seek_speed: impl AsRef<[u32]>,
     ) -> Result<ZSeekObstaclePositionReply, Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        obstacle_seek_height.serialize(&mut args);
-        z_min_position.serialize(&mut args);
+        obstacle_seek_height.as_ref().serialize(&mut args);
+        z_min_position.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        seek_speed.serialize(&mut args);
+        seek_speed.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 68, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  obstacle_seek_height: {:?}", obstacle_seek_height),
-                    format!("  z_min_position: {:?}", z_min_position),
+                    format!(
+                        "  obstacle_seek_height: {:?}",
+                        obstacle_seek_height.as_ref()
+                    ),
+                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  seek_speed: {:?}", seek_speed),
+                    format!("  seek_speed: {:?}", seek_speed.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.ZSeekObstaclePosition(\n{}\n)",
@@ -2545,41 +2590,41 @@ impl NimbusCorePipette {
     pub async fn z_seek_lld_position(
         &self,
 
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        seek_height: Vec<i32>,
-        z_min_position: Vec<i32>,
+        seek_height: impl AsRef<[i32]>,
+        z_min_position: impl AsRef<[i32]>,
         z_final: i32,
-        seek_speed: Vec<u32>,
-        capacitive_lld_sensitivity: Vec<i16>,
+        seek_speed: impl AsRef<[u32]>,
+        capacitive_lld_sensitivity: impl AsRef<[i16]>,
     ) -> Result<ZSeekLldPositionReply, Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        seek_height.serialize(&mut args);
-        z_min_position.serialize(&mut args);
+        seek_height.as_ref().serialize(&mut args);
+        z_min_position.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        seek_speed.serialize(&mut args);
-        capacitive_lld_sensitivity.serialize(&mut args);
+        seek_speed.as_ref().serialize(&mut args);
+        capacitive_lld_sensitivity.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 69, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  seek_height: {:?}", seek_height),
-                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  seek_height: {:?}", seek_height.as_ref()),
+                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  seek_speed: {:?}", seek_speed),
+                    format!("  seek_speed: {:?}", seek_speed.as_ref()),
                     format!(
                         "  capacitive_lld_sensitivity: {:?}",
-                        capacitive_lld_sensitivity
+                        capacitive_lld_sensitivity.as_ref()
                     ),
                 ];
                 format!(
@@ -2603,24 +2648,24 @@ impl NimbusCorePipette {
     pub async fn dispense_initialize_to_waste(
         &self,
 
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 70, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_position: {:?}", z_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_position: {:?}", z_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.DispenseInitializeToWaste(\n{}\n)",
@@ -2638,66 +2683,69 @@ impl NimbusCorePipette {
     pub async fn multiple_dispense_transport_air(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
         x_well_distance: i32,
         x_well_width: u32,
         x_number_of_wells: u16,
         x_velocity_scale: u16,
-        y_position: Vec<i32>,
-        y_well_distance: Vec<i32>,
-        volume: Vec<u32>,
-        tip_air_volume: Vec<u32>,
-        stop_back_volume: Vec<u32>,
-        dispense_speed: Vec<u32>,
-        cutoff_speed: Vec<u32>,
+        y_position: impl AsRef<[i32]>,
+        y_well_distance: impl AsRef<[i32]>,
+        volume: impl AsRef<[u32]>,
+        tip_air_volume: impl AsRef<[u32]>,
+        stop_back_volume: impl AsRef<[u32]>,
+        dispense_speed: impl AsRef<[u32]>,
+        cutoff_speed: impl AsRef<[u32]>,
         traverse_height: i32,
-        dispense_height: Vec<i32>,
+        dispense_height: impl AsRef<[i32]>,
         z_final: i32,
-        dispense_map: Vec<u16>,
-        transport_air_volume: Vec<u32>,
+        dispense_map: impl AsRef<[u16]>,
+        transport_air_volume: impl AsRef<[u32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
         x_well_distance.serialize(&mut args);
         x_well_width.serialize(&mut args);
         x_number_of_wells.serialize(&mut args);
         x_velocity_scale.serialize(&mut args);
-        y_position.serialize(&mut args);
-        y_well_distance.serialize(&mut args);
-        volume.serialize(&mut args);
-        tip_air_volume.serialize(&mut args);
-        stop_back_volume.serialize(&mut args);
-        dispense_speed.serialize(&mut args);
-        cutoff_speed.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        y_well_distance.as_ref().serialize(&mut args);
+        volume.as_ref().serialize(&mut args);
+        tip_air_volume.as_ref().serialize(&mut args);
+        stop_back_volume.as_ref().serialize(&mut args);
+        dispense_speed.as_ref().serialize(&mut args);
+        cutoff_speed.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        dispense_height.serialize(&mut args);
+        dispense_height.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        dispense_map.serialize(&mut args);
-        transport_air_volume.serialize(&mut args);
+        dispense_map.as_ref().serialize(&mut args);
+        transport_air_volume.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 71, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
                     format!("  x_well_distance: {:?}", x_well_distance),
                     format!("  x_well_width: {:?}", x_well_width),
                     format!("  x_number_of_wells: {:?}", x_number_of_wells),
                     format!("  x_velocity_scale: {:?}", x_velocity_scale),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  y_well_distance: {:?}", y_well_distance),
-                    format!("  volume: {:?}", volume),
-                    format!("  tip_air_volume: {:?}", tip_air_volume),
-                    format!("  stop_back_volume: {:?}", stop_back_volume),
-                    format!("  dispense_speed: {:?}", dispense_speed),
-                    format!("  cutoff_speed: {:?}", cutoff_speed),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  y_well_distance: {:?}", y_well_distance.as_ref()),
+                    format!("  volume: {:?}", volume.as_ref()),
+                    format!("  tip_air_volume: {:?}", tip_air_volume.as_ref()),
+                    format!("  stop_back_volume: {:?}", stop_back_volume.as_ref()),
+                    format!("  dispense_speed: {:?}", dispense_speed.as_ref()),
+                    format!("  cutoff_speed: {:?}", cutoff_speed.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  dispense_height: {:?}", dispense_height),
+                    format!("  dispense_height: {:?}", dispense_height.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  dispense_map: {:?}", dispense_map),
-                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  dispense_map: {:?}", dispense_map.as_ref()),
+                    format!(
+                        "  transport_air_volume: {:?}",
+                        transport_air_volume.as_ref()
+                    ),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MultipleDispenseTransportAir(\n{}\n)",
@@ -2715,75 +2763,78 @@ impl NimbusCorePipette {
     pub async fn on_the_fly_dispense_transport_air(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
         x_well_distance: i32,
         x_well_width: u32,
         x_number_of_wells: u16,
         x_velocity_scale: u16,
-        y_position: Vec<i32>,
-        y_well_distance: Vec<i32>,
-        volume: Vec<u32>,
-        tip_air_volume: Vec<u32>,
-        stop_back_volume: Vec<u32>,
-        dispense_speed: Vec<u32>,
-        cutoff_speed: Vec<u32>,
-        tadm_enabled: Vec<i16>,
-        limit_curve_index: Vec<u32>,
+        y_position: impl AsRef<[i32]>,
+        y_well_distance: impl AsRef<[i32]>,
+        volume: impl AsRef<[u32]>,
+        tip_air_volume: impl AsRef<[u32]>,
+        stop_back_volume: impl AsRef<[u32]>,
+        dispense_speed: impl AsRef<[u32]>,
+        cutoff_speed: impl AsRef<[u32]>,
+        tadm_enabled: impl AsRef<[i16]>,
+        limit_curve_index: impl AsRef<[u32]>,
         recording_mode: u16,
         traverse_height: i32,
-        dispense_height: Vec<i32>,
+        dispense_height: impl AsRef<[i32]>,
         z_final: i32,
-        dispense_map: Vec<u16>,
-        transport_air_volume: Vec<u32>,
+        dispense_map: impl AsRef<[u16]>,
+        transport_air_volume: impl AsRef<[u32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
         x_well_distance.serialize(&mut args);
         x_well_width.serialize(&mut args);
         x_number_of_wells.serialize(&mut args);
         x_velocity_scale.serialize(&mut args);
-        y_position.serialize(&mut args);
-        y_well_distance.serialize(&mut args);
-        volume.serialize(&mut args);
-        tip_air_volume.serialize(&mut args);
-        stop_back_volume.serialize(&mut args);
-        dispense_speed.serialize(&mut args);
-        cutoff_speed.serialize(&mut args);
-        tadm_enabled.serialize(&mut args);
-        limit_curve_index.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        y_well_distance.as_ref().serialize(&mut args);
+        volume.as_ref().serialize(&mut args);
+        tip_air_volume.as_ref().serialize(&mut args);
+        stop_back_volume.as_ref().serialize(&mut args);
+        dispense_speed.as_ref().serialize(&mut args);
+        cutoff_speed.as_ref().serialize(&mut args);
+        tadm_enabled.as_ref().serialize(&mut args);
+        limit_curve_index.as_ref().serialize(&mut args);
         recording_mode.serialize(&mut args);
         traverse_height.serialize(&mut args);
-        dispense_height.serialize(&mut args);
+        dispense_height.as_ref().serialize(&mut args);
         z_final.serialize(&mut args);
-        dispense_map.serialize(&mut args);
-        transport_air_volume.serialize(&mut args);
+        dispense_map.as_ref().serialize(&mut args);
+        transport_air_volume.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 72, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
                     format!("  x_well_distance: {:?}", x_well_distance),
                     format!("  x_well_width: {:?}", x_well_width),
                     format!("  x_number_of_wells: {:?}", x_number_of_wells),
                     format!("  x_velocity_scale: {:?}", x_velocity_scale),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  y_well_distance: {:?}", y_well_distance),
-                    format!("  volume: {:?}", volume),
-                    format!("  tip_air_volume: {:?}", tip_air_volume),
-                    format!("  stop_back_volume: {:?}", stop_back_volume),
-                    format!("  dispense_speed: {:?}", dispense_speed),
-                    format!("  cutoff_speed: {:?}", cutoff_speed),
-                    format!("  tadm_enabled: {:?}", tadm_enabled),
-                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  y_well_distance: {:?}", y_well_distance.as_ref()),
+                    format!("  volume: {:?}", volume.as_ref()),
+                    format!("  tip_air_volume: {:?}", tip_air_volume.as_ref()),
+                    format!("  stop_back_volume: {:?}", stop_back_volume.as_ref()),
+                    format!("  dispense_speed: {:?}", dispense_speed.as_ref()),
+                    format!("  cutoff_speed: {:?}", cutoff_speed.as_ref()),
+                    format!("  tadm_enabled: {:?}", tadm_enabled.as_ref()),
+                    format!("  limit_curve_index: {:?}", limit_curve_index.as_ref()),
                     format!("  recording_mode: {:?}", recording_mode),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  dispense_height: {:?}", dispense_height),
+                    format!("  dispense_height: {:?}", dispense_height.as_ref()),
                     format!("  z_final: {:?}", z_final),
-                    format!("  dispense_map: {:?}", dispense_map),
-                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  dispense_map: {:?}", dispense_map.as_ref()),
+                    format!(
+                        "  transport_air_volume: {:?}",
+                        transport_air_volume.as_ref()
+                    ),
                 ];
                 format!(
                     "in call to NimbusCorePipette.OnTheFlyDispenseTransportAir(\n{}\n)",
@@ -2801,18 +2852,18 @@ impl NimbusCorePipette {
     pub async fn set_z_liquid_seek_speed(
         &self,
 
-        tips_used: Vec<u16>,
-        seek_speeds: Vec<u32>,
+        tips_used: impl AsRef<[u16]>,
+        seek_speeds: impl AsRef<[u32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        seek_speeds.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        seek_speeds.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 73, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  seek_speeds: {:?}", seek_speeds),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  seek_speeds: {:?}", seek_speeds.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.SetZLiquidSeekSpeed(\n{}\n)",
@@ -2844,27 +2895,33 @@ impl NimbusCorePipette {
     pub async fn move_absolute_z_2_speed(
         &self,
 
-        tips_used: Vec<u16>,
-        z_position: Vec<i32>,
-        z_speed_switch_position: Vec<i32>,
-        velocity: Vec<u32>,
-        lower_section_velocity: Vec<u32>,
+        tips_used: impl AsRef<[u16]>,
+        z_position: impl AsRef<[i32]>,
+        z_speed_switch_position: impl AsRef<[i32]>,
+        velocity: impl AsRef<[u32]>,
+        lower_section_velocity: impl AsRef<[u32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        z_position.serialize(&mut args);
-        z_speed_switch_position.serialize(&mut args);
-        velocity.serialize(&mut args);
-        lower_section_velocity.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        z_position.as_ref().serialize(&mut args);
+        z_speed_switch_position.as_ref().serialize(&mut args);
+        velocity.as_ref().serialize(&mut args);
+        lower_section_velocity.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 75, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  z_position: {:?}", z_position),
-                    format!("  z_speed_switch_position: {:?}", z_speed_switch_position),
-                    format!("  velocity: {:?}", velocity),
-                    format!("  lower_section_velocity: {:?}", lower_section_velocity),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  z_position: {:?}", z_position.as_ref()),
+                    format!(
+                        "  z_speed_switch_position: {:?}",
+                        z_speed_switch_position.as_ref()
+                    ),
+                    format!("  velocity: {:?}", velocity.as_ref()),
+                    format!(
+                        "  lower_section_velocity: {:?}",
+                        lower_section_velocity.as_ref()
+                    ),
                 ];
                 format!(
                     "in call to NimbusCorePipette.MoveAbsoluteZ2Speed(\n{}\n)",
@@ -3060,30 +3117,30 @@ impl NimbusCorePipette {
     pub async fn initialize_roll(
         &self,
 
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
-        roll_distance: Vec<i32>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
+        roll_distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
-        roll_distance.serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
+        roll_distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 80, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
-                    format!("  roll_distance: {:?}", roll_distance),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
+                    format!("  roll_distance: {:?}", roll_distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.InitializeRoll(\n{}\n)",
@@ -3101,30 +3158,30 @@ impl NimbusCorePipette {
     pub async fn initialize_smart_roll(
         &self,
 
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
-        roll_distance: Vec<i32>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
+        roll_distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
-        roll_distance.serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
+        roll_distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 81, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
-                    format!("  roll_distance: {:?}", roll_distance),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
+                    format!("  roll_distance: {:?}", roll_distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.InitializeSmartRoll(\n{}\n)",
@@ -3142,36 +3199,36 @@ impl NimbusCorePipette {
     pub async fn drop_tips_roll(
         &self,
 
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
-        roll_distance: Vec<i32>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
+        roll_distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
-        roll_distance.serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
+        roll_distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 82, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
-                    format!("  roll_distance: {:?}", roll_distance),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
+                    format!("  roll_distance: {:?}", roll_distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipette.DropTipsRoll(\n{}\n)",
@@ -3186,13 +3243,13 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn z_move_safe(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn z_move_safe(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 83, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.ZMoveSafe(\n{}\n)",
                     parameters.join("\n")

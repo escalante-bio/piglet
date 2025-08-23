@@ -1,10 +1,10 @@
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -207,14 +207,9 @@ impl TryFrom<i32> for Rail {
 
 impl PigletCodec for Rail {
     const TYPE_ID: u8 = 32;
+}
 
-    fn serialize(&self, stream: &mut BytesMut) {
-        stream.put_u8(Self::TYPE_ID);
-        stream.put_u8(0);
-        stream.put_u16_le(4);
-        stream.put_i32_le(*self as i32);
-    }
-
+impl PigletDeserialize for Rail {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -231,17 +226,24 @@ impl PigletCodec for Rail {
     }
 }
 
-impl PigletCodec for MVec<Vec<Rail>> {
-    const TYPE_ID: u8 = 35;
-    fn serialize(&self, bytes: &mut BytesMut) {
-        bytes.put_u8(Self::TYPE_ID);
-        bytes.put_u8(0);
-        bytes.put_u16_le(4 * self.0.len() as u16);
-        for v in &self.0 {
-            bytes.put_i32_le(*v as i32);
-        }
+impl PigletSerialize for Rail {
+    fn serialize(&self, stream: &mut BytesMut) {
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(4);
+        stream.put_i32_le(*self as i32);
     }
+}
 
+impl PigletCodec for MSlice<'_, Rail> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletCodec for MVec<Rail> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletDeserialize for MVec<Rail> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -258,6 +260,17 @@ impl PigletCodec for MVec<Vec<Rail>> {
             arr.push(stream.get_i32_le().try_into()?);
         }
         Ok(MVec(arr))
+    }
+}
+
+impl PigletSerialize for MSlice<'_, Rail> {
+    fn serialize(&self, bytes: &mut BytesMut) {
+        bytes.put_u8(Self::TYPE_ID);
+        bytes.put_u8(0);
+        bytes.put_u16_le(4 * self.0.len() as u16);
+        for v in self.0.as_ref() {
+            bytes.put_i32_le(*v as i32);
+        }
     }
 }
 
@@ -286,14 +299,9 @@ impl TryFrom<i32> for ChannelType {
 
 impl PigletCodec for ChannelType {
     const TYPE_ID: u8 = 32;
+}
 
-    fn serialize(&self, stream: &mut BytesMut) {
-        stream.put_u8(Self::TYPE_ID);
-        stream.put_u8(0);
-        stream.put_u16_le(4);
-        stream.put_i32_le(*self as i32);
-    }
-
+impl PigletDeserialize for ChannelType {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -310,17 +318,24 @@ impl PigletCodec for ChannelType {
     }
 }
 
-impl PigletCodec for MVec<Vec<ChannelType>> {
-    const TYPE_ID: u8 = 35;
-    fn serialize(&self, bytes: &mut BytesMut) {
-        bytes.put_u8(Self::TYPE_ID);
-        bytes.put_u8(0);
-        bytes.put_u16_le(4 * self.0.len() as u16);
-        for v in &self.0 {
-            bytes.put_i32_le(*v as i32);
-        }
+impl PigletSerialize for ChannelType {
+    fn serialize(&self, stream: &mut BytesMut) {
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(4);
+        stream.put_i32_le(*self as i32);
     }
+}
 
+impl PigletCodec for MSlice<'_, ChannelType> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletCodec for MVec<ChannelType> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletDeserialize for MVec<ChannelType> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -340,6 +355,17 @@ impl PigletCodec for MVec<Vec<ChannelType>> {
     }
 }
 
+impl PigletSerialize for MSlice<'_, ChannelType> {
+    fn serialize(&self, bytes: &mut BytesMut) {
+        bytes.put_u8(Self::TYPE_ID);
+        bytes.put_u8(0);
+        bytes.put_u16_le(4 * self.0.len() as u16);
+        for v in self.0.as_ref() {
+            bytes.put_i32_le(*v as i32);
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ChannelConfiguration {
     pub type_: ChannelType,
@@ -351,7 +377,9 @@ pub struct ChannelConfiguration {
 
 impl PigletCodec for ChannelConfiguration {
     const TYPE_ID: u8 = 30;
+}
 
+impl PigletSerialize for ChannelConfiguration {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0);
@@ -367,7 +395,9 @@ impl PigletCodec for ChannelConfiguration {
         stream.put_u16_le(buffer.len() as u16);
         stream.put(buffer);
     }
+}
 
+impl PigletDeserialize for ChannelConfiguration {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -390,14 +420,21 @@ impl PigletCodec for ChannelConfiguration {
     }
 }
 
-impl PigletCodec for MVec<Vec<ChannelConfiguration>> {
+impl PigletCodec for MSlice<'_, ChannelConfiguration> {
     const TYPE_ID: u8 = 31;
+}
+
+impl PigletCodec for MVec<ChannelConfiguration> {
+    const TYPE_ID: u8 = 31;
+}
+
+impl PigletSerialize for MSlice<'_, ChannelConfiguration> {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0);
 
         let mut outer = BytesMut::new();
-        for s in &self.0 {
+        for s in self.0.as_ref() {
             let mut buffer = BytesMut::new();
 
             s.type_.serialize(&mut buffer);
@@ -413,7 +450,15 @@ impl PigletCodec for MVec<Vec<ChannelConfiguration>> {
         stream.put_u16_le(outer.len() as u16);
         stream.put(outer);
     }
+}
 
+impl PigletSerialize for MVec<ChannelConfiguration> {
+    fn serialize(&self, stream: &mut BytesMut) {
+        MSlice(&self.0).serialize(stream)
+    }
+}
+
+impl PigletDeserialize for MVec<ChannelConfiguration> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {

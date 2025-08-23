@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -31,13 +31,13 @@ impl NimbusCoreXyCoord {
         }
     }
 
-    pub async fn initialize_xy(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn initialize_xy(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 1, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCoreXyCoord.InitializeXY(\n{}\n)",
                     parameters.join("\n")
@@ -54,21 +54,21 @@ impl NimbusCoreXyCoord {
     pub async fn move_xy_absolute(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
-        y_position: Vec<i32>,
+        y_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 2, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCoreXyCoord.MoveXYAbsolute(\n{}\n)",
@@ -86,27 +86,27 @@ impl NimbusCoreXyCoord {
     pub async fn move_xy_absolute_plate(
         &self,
 
-        tips_used: Vec<u16>,
-        gripper_tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
+        gripper_tips_used: impl AsRef<[u16]>,
         x_position: i32,
         x_acceleration: u32,
-        y_position: Vec<i32>,
+        y_position: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        gripper_tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        gripper_tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
         x_acceleration.serialize(&mut args);
-        y_position.serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  gripper_tips_used: {:?}", gripper_tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  gripper_tips_used: {:?}", gripper_tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
                     format!("  x_acceleration: {:?}", x_acceleration),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCoreXyCoord.MoveXYAbsolutePlate(\n{}\n)",
@@ -368,27 +368,27 @@ impl NimbusCoreXyCoord {
     pub async fn on_the_fly_dispense(
         &self,
 
-        tips_used: Vec<u16>,
+        tips_used: impl AsRef<[u16]>,
         x_position: i32,
         acceleration: u32,
         velocity: u32,
-        times: Vec<u32>,
+        times: impl AsRef<[u32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         x_position.serialize(&mut args);
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
-        times.serialize(&mut args);
+        times.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 16, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
                     format!("  x_position: {:?}", x_position),
                     format!("  acceleration: {:?}", acceleration),
                     format!("  velocity: {:?}", velocity),
-                    format!("  times: {:?}", times),
+                    format!("  times: {:?}", times.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCoreXyCoord.OnTheFlyDispense(\n{}\n)",
@@ -440,18 +440,18 @@ impl NimbusCoreXyCoord {
     pub async fn move_y_relative(
         &self,
 
-        tips_used: Vec<u16>,
-        y_distance: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        y_distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        y_distance.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        y_distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 20, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  y_distance: {:?}", y_distance),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  y_distance: {:?}", y_distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCoreXyCoord.MoveYRelative(\n{}\n)",

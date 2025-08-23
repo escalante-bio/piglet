@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -1322,42 +1322,42 @@ impl NimbusCoreCalibration {
     pub async fn leak_check(
         &self,
 
-        tips_used: Vec<u16>,
-        x_position: Vec<i32>,
-        y_position: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
         traverse_height: i32,
-        z_start_position: Vec<i32>,
-        z_stop_position: Vec<i32>,
-        z_final: Vec<i32>,
-        tip_type: Vec<u16>,
-        time: Vec<u32>,
-        test_type: Vec<bool>,
+        z_start_position: impl AsRef<[i32]>,
+        z_stop_position: impl AsRef<[i32]>,
+        z_final: impl AsRef<[i32]>,
+        tip_type: impl AsRef<[u16]>,
+        time: impl AsRef<[u32]>,
+        test_type: impl AsRef<[bool]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        x_position.serialize(&mut args);
-        y_position.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
         traverse_height.serialize(&mut args);
-        z_start_position.serialize(&mut args);
-        z_stop_position.serialize(&mut args);
-        z_final.serialize(&mut args);
-        tip_type.serialize(&mut args);
-        time.serialize(&mut args);
-        test_type.serialize(&mut args);
+        z_start_position.as_ref().serialize(&mut args);
+        z_stop_position.as_ref().serialize(&mut args);
+        z_final.as_ref().serialize(&mut args);
+        tip_type.as_ref().serialize(&mut args);
+        time.as_ref().serialize(&mut args);
+        test_type.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 43, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  x_position: {:?}", x_position),
-                    format!("  y_position: {:?}", y_position),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
                     format!("  traverse_height: {:?}", traverse_height),
-                    format!("  z_start_position: {:?}", z_start_position),
-                    format!("  z_stop_position: {:?}", z_stop_position),
-                    format!("  z_final: {:?}", z_final),
-                    format!("  tip_type: {:?}", tip_type),
-                    format!("  time: {:?}", time),
-                    format!("  test_type: {:?}", test_type),
+                    format!("  z_start_position: {:?}", z_start_position.as_ref()),
+                    format!("  z_stop_position: {:?}", z_stop_position.as_ref()),
+                    format!("  z_final: {:?}", z_final.as_ref()),
+                    format!("  tip_type: {:?}", tip_type.as_ref()),
+                    format!("  time: {:?}", time.as_ref()),
+                    format!("  test_type: {:?}", test_type.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCoreCalibration.LeakCheck(\n{}\n)",
@@ -1405,13 +1405,17 @@ impl NimbusCoreCalibration {
         Ok(())
     }
 
-    pub async fn calibration_squeeze_check_torque(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn calibration_squeeze_check_torque(
+        &self,
+
+        tips_used: impl AsRef<[u16]>,
+    ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 46, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCoreCalibration.CalibrationSqueezeCheckTorque(\n{}\n)",
                     parameters.join("\n")
@@ -1425,13 +1429,17 @@ impl NimbusCoreCalibration {
         Ok(())
     }
 
-    pub async fn calibrate_squeeze_position(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn calibrate_squeeze_position(
+        &self,
+
+        tips_used: impl AsRef<[u16]>,
+    ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 47, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCoreCalibration.CalibrateSqueezePosition(\n{}\n)",
                     parameters.join("\n")
@@ -1523,14 +1531,14 @@ impl NimbusCoreCalibration {
     pub async fn calibration_set_y_home_offsets(
         &self,
 
-        y_home_offset: Vec<i32>,
+        y_home_offset: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        y_home_offset.serialize(&mut args);
+        y_home_offset.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 52, args.freeze()).await,
             || {
-                let parameters = vec![format!("  y_home_offset: {:?}", y_home_offset)];
+                let parameters = vec![format!("  y_home_offset: {:?}", y_home_offset.as_ref())];
                 format!(
                     "in call to NimbusCoreCalibration.CalibrationSetYHomeOffsets(\n{}\n)",
                     parameters.join("\n")
@@ -1547,14 +1555,14 @@ impl NimbusCoreCalibration {
     pub async fn calibration_set_z_home_offsets(
         &self,
 
-        z_home_offset: Vec<i32>,
+        z_home_offset: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        z_home_offset.serialize(&mut args);
+        z_home_offset.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 53, args.freeze()).await,
             || {
-                let parameters = vec![format!("  z_home_offset: {:?}", z_home_offset)];
+                let parameters = vec![format!("  z_home_offset: {:?}", z_home_offset.as_ref())];
                 format!(
                     "in call to NimbusCoreCalibration.CalibrationSetZHomeOffsets(\n{}\n)",
                     parameters.join("\n")
@@ -1666,13 +1674,13 @@ impl NimbusCoreCalibration {
         Ok(())
     }
 
-    pub async fn z_servo_off(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn z_servo_off(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 57, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCoreCalibration.ZServoOff(\n{}\n)",
                     parameters.join("\n")

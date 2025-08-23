@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -59,13 +59,13 @@ impl NimbusCoreIoBoardDisplayBoard {
         Ok(positions)
     }
 
-    pub async fn set_lights(&self, lights: Vec<bool>) -> Result<(), Error> {
+    pub async fn set_lights(&self, lights: impl AsRef<[bool]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        lights.serialize(&mut args);
+        lights.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
             || {
-                let parameters = vec![format!("  lights: {:?}", lights)];
+                let parameters = vec![format!("  lights: {:?}", lights.as_ref())];
                 format!(
                     "in call to NimbusCoreIoBoardDisplayBoard.SetLights(\n{}\n)",
                     parameters.join("\n")

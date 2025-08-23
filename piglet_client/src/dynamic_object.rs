@@ -1,6 +1,6 @@
 use crate::client::{Error, Error::ConnectionError, RobotClient};
 use crate::object_address::ObjectAddress;
-use crate::values::PigletCodec;
+use crate::values::{PigletDeserialize, PigletSerialize};
 use anyhow::anyhow;
 use bytes::{Buf, Bytes, BytesMut};
 use std::sync::Arc;

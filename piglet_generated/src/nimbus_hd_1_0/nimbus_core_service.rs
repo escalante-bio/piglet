@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -207,27 +207,27 @@ impl NimbusCoreService {
     pub async fn set_channel_counters(
         &self,
 
-        tips_used: Vec<u16>,
-        tip_pickup_counter: Vec<u32>,
-        tip_eject_counter: Vec<u32>,
-        aspirate_counter: Vec<u32>,
-        dispense_counter: Vec<u32>,
+        tips_used: impl AsRef<[u16]>,
+        tip_pickup_counter: impl AsRef<[u32]>,
+        tip_eject_counter: impl AsRef<[u32]>,
+        aspirate_counter: impl AsRef<[u32]>,
+        dispense_counter: impl AsRef<[u32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        tip_pickup_counter.serialize(&mut args);
-        tip_eject_counter.serialize(&mut args);
-        aspirate_counter.serialize(&mut args);
-        dispense_counter.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        tip_pickup_counter.as_ref().serialize(&mut args);
+        tip_eject_counter.as_ref().serialize(&mut args);
+        aspirate_counter.as_ref().serialize(&mut args);
+        dispense_counter.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 9, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  tip_pickup_counter: {:?}", tip_pickup_counter),
-                    format!("  tip_eject_counter: {:?}", tip_eject_counter),
-                    format!("  aspirate_counter: {:?}", aspirate_counter),
-                    format!("  dispense_counter: {:?}", dispense_counter),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  tip_pickup_counter: {:?}", tip_pickup_counter.as_ref()),
+                    format!("  tip_eject_counter: {:?}", tip_eject_counter.as_ref()),
+                    format!("  aspirate_counter: {:?}", aspirate_counter.as_ref()),
+                    format!("  dispense_counter: {:?}", dispense_counter.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCoreService.SetChannelCounters(\n{}\n)",
@@ -276,13 +276,13 @@ impl NimbusCoreService {
         Ok(enabled)
     }
 
-    pub async fn y_servo_off(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn y_servo_off(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 12, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCoreService.YServoOff(\n{}\n)",
                     parameters.join("\n")
@@ -296,13 +296,13 @@ impl NimbusCoreService {
         Ok(())
     }
 
-    pub async fn z_servo_off(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn z_servo_off(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 13, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCoreService.ZServoOff(\n{}\n)",
                     parameters.join("\n")
@@ -320,17 +320,17 @@ impl NimbusCoreService {
         &self,
 
         channel: u16,
-        indexes: Vec<i16>,
+        indexes: impl AsRef<[i16]>,
     ) -> Result</* enabled= */ Vec<bool>, Error> {
         let mut args = BytesMut::new();
         channel.serialize(&mut args);
-        indexes.serialize(&mut args);
+        indexes.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 0, 14, args.freeze()).await,
             || {
                 let parameters = vec![
                     format!("  channel: {:?}", channel),
-                    format!("  indexes: {:?}", indexes),
+                    format!("  indexes: {:?}", indexes.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCoreService.GetChannelConfiguration(\n{}\n)",

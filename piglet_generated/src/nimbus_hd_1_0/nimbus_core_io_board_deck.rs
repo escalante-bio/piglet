@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -69,17 +69,17 @@ impl NimbusCoreIoBoardDeck {
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
-        let leds = MVec::<Vec<LedState>>::deserialize(&mut stream)?.0;
+        let leds = MVec::<LedState>::deserialize(&mut stream)?.0;
         Ok(leds)
     }
 
-    pub async fn set_track_led_state(&self, leds: Vec<LedState>) -> Result<(), Error> {
+    pub async fn set_track_led_state(&self, leds: impl AsRef<[LedState]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        MVec(leds.clone()).serialize(&mut args);
+        MSlice(leds.as_ref()).serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 4, args.freeze()).await,
             || {
-                let parameters = vec![format!("  leds: {:?}", leds)];
+                let parameters = vec![format!("  leds: {:?}", leds.as_ref())];
                 format!(
                     "in call to NimbusCoreIoBoardDeck.SetTrackLedState(\n{}\n)",
                     parameters.join("\n")
@@ -93,13 +93,17 @@ impl NimbusCoreIoBoardDeck {
         Ok(())
     }
 
-    pub async fn configure_track_leds(&self, leds: Vec<LedConfiguration>) -> Result<(), Error> {
+    pub async fn configure_track_leds(
+        &self,
+
+        leds: impl AsRef<[LedConfiguration]>,
+    ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        MVec(leds.clone()).serialize(&mut args);
+        MSlice(leds.as_ref()).serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
             || {
-                let parameters = vec![format!("  leds: {:?}", leds)];
+                let parameters = vec![format!("  leds: {:?}", leds.as_ref())];
                 format!(
                     "in call to NimbusCoreIoBoardDeck.ConfigureTrackLeds(\n{}\n)",
                     parameters.join("\n")
@@ -297,14 +301,9 @@ impl TryFrom<i32> for LedState {
 
 impl PigletCodec for LedState {
     const TYPE_ID: u8 = 32;
+}
 
-    fn serialize(&self, stream: &mut BytesMut) {
-        stream.put_u8(Self::TYPE_ID);
-        stream.put_u8(0);
-        stream.put_u16_le(4);
-        stream.put_i32_le(*self as i32);
-    }
-
+impl PigletDeserialize for LedState {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -321,17 +320,24 @@ impl PigletCodec for LedState {
     }
 }
 
-impl PigletCodec for MVec<Vec<LedState>> {
-    const TYPE_ID: u8 = 35;
-    fn serialize(&self, bytes: &mut BytesMut) {
-        bytes.put_u8(Self::TYPE_ID);
-        bytes.put_u8(0);
-        bytes.put_u16_le(4 * self.0.len() as u16);
-        for v in &self.0 {
-            bytes.put_i32_le(*v as i32);
-        }
+impl PigletSerialize for LedState {
+    fn serialize(&self, stream: &mut BytesMut) {
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(4);
+        stream.put_i32_le(*self as i32);
     }
+}
 
+impl PigletCodec for MSlice<'_, LedState> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletCodec for MVec<LedState> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletDeserialize for MVec<LedState> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -351,6 +357,17 @@ impl PigletCodec for MVec<Vec<LedState>> {
     }
 }
 
+impl PigletSerialize for MSlice<'_, LedState> {
+    fn serialize(&self, bytes: &mut BytesMut) {
+        bytes.put_u8(Self::TYPE_ID);
+        bytes.put_u8(0);
+        bytes.put_u16_le(4 * self.0.len() as u16);
+        for v in self.0.as_ref() {
+            bytes.put_i32_le(*v as i32);
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct LedConfiguration {
     pub position: u8,
@@ -359,7 +376,9 @@ pub struct LedConfiguration {
 
 impl PigletCodec for LedConfiguration {
     const TYPE_ID: u8 = 30;
+}
 
+impl PigletSerialize for LedConfiguration {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0);
@@ -372,7 +391,9 @@ impl PigletCodec for LedConfiguration {
         stream.put_u16_le(buffer.len() as u16);
         stream.put(buffer);
     }
+}
 
+impl PigletDeserialize for LedConfiguration {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -392,14 +413,21 @@ impl PigletCodec for LedConfiguration {
     }
 }
 
-impl PigletCodec for MVec<Vec<LedConfiguration>> {
+impl PigletCodec for MSlice<'_, LedConfiguration> {
     const TYPE_ID: u8 = 31;
+}
+
+impl PigletCodec for MVec<LedConfiguration> {
+    const TYPE_ID: u8 = 31;
+}
+
+impl PigletSerialize for MSlice<'_, LedConfiguration> {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0);
 
         let mut outer = BytesMut::new();
-        for s in &self.0 {
+        for s in self.0.as_ref() {
             let mut buffer = BytesMut::new();
 
             s.position.serialize(&mut buffer);
@@ -412,7 +440,15 @@ impl PigletCodec for MVec<Vec<LedConfiguration>> {
         stream.put_u16_le(outer.len() as u16);
         stream.put(outer);
     }
+}
 
+impl PigletSerialize for MVec<LedConfiguration> {
+    fn serialize(&self, stream: &mut BytesMut) {
+        MSlice(&self.0).serialize(stream)
+    }
+}
+
+impl PigletDeserialize for MVec<LedConfiguration> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -446,7 +482,9 @@ pub struct TrackSensorStateChangedData {
 
 impl PigletCodec for TrackSensorStateChangedData {
     const TYPE_ID: u8 = 30;
+}
 
+impl PigletSerialize for TrackSensorStateChangedData {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0);
@@ -459,7 +497,9 @@ impl PigletCodec for TrackSensorStateChangedData {
         stream.put_u16_le(buffer.len() as u16);
         stream.put(buffer);
     }
+}
 
+impl PigletDeserialize for TrackSensorStateChangedData {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -479,14 +519,21 @@ impl PigletCodec for TrackSensorStateChangedData {
     }
 }
 
-impl PigletCodec for MVec<Vec<TrackSensorStateChangedData>> {
+impl PigletCodec for MSlice<'_, TrackSensorStateChangedData> {
     const TYPE_ID: u8 = 31;
+}
+
+impl PigletCodec for MVec<TrackSensorStateChangedData> {
+    const TYPE_ID: u8 = 31;
+}
+
+impl PigletSerialize for MSlice<'_, TrackSensorStateChangedData> {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0);
 
         let mut outer = BytesMut::new();
-        for s in &self.0 {
+        for s in self.0.as_ref() {
             let mut buffer = BytesMut::new();
 
             s.previous_sensor_states.serialize(&mut buffer);
@@ -499,7 +546,15 @@ impl PigletCodec for MVec<Vec<TrackSensorStateChangedData>> {
         stream.put_u16_le(outer.len() as u16);
         stream.put(outer);
     }
+}
 
+impl PigletSerialize for MVec<TrackSensorStateChangedData> {
+    fn serialize(&self, stream: &mut BytesMut) {
+        MSlice(&self.0).serialize(stream)
+    }
+}
+
+impl PigletDeserialize for MVec<TrackSensorStateChangedData> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {

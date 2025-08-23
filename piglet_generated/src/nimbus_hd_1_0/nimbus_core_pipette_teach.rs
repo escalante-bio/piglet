@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -54,18 +54,18 @@ impl NimbusCorePipetteTeach {
     pub async fn y_move_relative(
         &self,
 
-        tips_used: Vec<u16>,
-        distance: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        distance.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 2, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  distance: {:?}", distance),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  distance: {:?}", distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipetteTeach.YMoveRelative(\n{}\n)",
@@ -83,18 +83,18 @@ impl NimbusCorePipetteTeach {
     pub async fn z_move_relative(
         &self,
 
-        tips_used: Vec<u16>,
-        distance: Vec<i32>,
+        tips_used: impl AsRef<[u16]>,
+        distance: impl AsRef<[i32]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
-        distance.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        distance.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
             || {
                 let parameters = vec![
-                    format!("  tips_used: {:?}", tips_used),
-                    format!("  distance: {:?}", distance),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  distance: {:?}", distance.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCorePipetteTeach.ZMoveRelative(\n{}\n)",
@@ -109,13 +109,13 @@ impl NimbusCorePipetteTeach {
         Ok(())
     }
 
-    pub async fn squeeze_on(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn squeeze_on(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 4, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipetteTeach.SqueezeOn(\n{}\n)",
                     parameters.join("\n")
@@ -129,13 +129,13 @@ impl NimbusCorePipetteTeach {
         Ok(())
     }
 
-    pub async fn squeeze_off(&self, tips_used: Vec<u16>) -> Result<(), Error> {
+    pub async fn squeeze_off(&self, tips_used: impl AsRef<[u16]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        tips_used.serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
             || {
-                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipetteTeach.SqueezeOff(\n{}\n)",
                     parameters.join("\n")

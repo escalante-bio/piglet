@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -1839,26 +1839,26 @@ impl NimbusCoreChannel {
         &self,
 
         name: String,
-        lower_limit_x: Vec<u16>,
-        lower_limit_y: Vec<i16>,
-        upper_limit_x: Vec<u16>,
-        upper_limit_y: Vec<i16>,
+        lower_limit_x: impl AsRef<[u16]>,
+        lower_limit_y: impl AsRef<[i16]>,
+        upper_limit_x: impl AsRef<[u16]>,
+        upper_limit_y: impl AsRef<[i16]>,
     ) -> Result<CreateLimitCurveReply, Error> {
         let mut args = BytesMut::new();
         name.serialize(&mut args);
-        lower_limit_x.serialize(&mut args);
-        lower_limit_y.serialize(&mut args);
-        upper_limit_x.serialize(&mut args);
-        upper_limit_y.serialize(&mut args);
+        lower_limit_x.as_ref().serialize(&mut args);
+        lower_limit_y.as_ref().serialize(&mut args);
+        upper_limit_x.as_ref().serialize(&mut args);
+        upper_limit_y.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 62, args.freeze()).await,
             || {
                 let parameters = vec![
                     format!("  name: {:?}", name),
-                    format!("  lower_limit_x: {:?}", lower_limit_x),
-                    format!("  lower_limit_y: {:?}", lower_limit_y),
-                    format!("  upper_limit_x: {:?}", upper_limit_x),
-                    format!("  upper_limit_y: {:?}", upper_limit_y),
+                    format!("  lower_limit_x: {:?}", lower_limit_x.as_ref()),
+                    format!("  lower_limit_y: {:?}", lower_limit_y.as_ref()),
+                    format!("  upper_limit_x: {:?}", upper_limit_x.as_ref()),
+                    format!("  upper_limit_y: {:?}", upper_limit_y.as_ref()),
                 ];
                 format!(
                     "in call to NimbusCoreChannel.CreateLimitCurve(\n{}\n)",
@@ -3236,14 +3236,9 @@ impl TryFrom<i32> for ColletChecks {
 
 impl PigletCodec for ColletChecks {
     const TYPE_ID: u8 = 32;
+}
 
-    fn serialize(&self, stream: &mut BytesMut) {
-        stream.put_u8(Self::TYPE_ID);
-        stream.put_u8(0);
-        stream.put_u16_le(4);
-        stream.put_i32_le(*self as i32);
-    }
-
+impl PigletDeserialize for ColletChecks {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -3260,17 +3255,24 @@ impl PigletCodec for ColletChecks {
     }
 }
 
-impl PigletCodec for MVec<Vec<ColletChecks>> {
-    const TYPE_ID: u8 = 35;
-    fn serialize(&self, bytes: &mut BytesMut) {
-        bytes.put_u8(Self::TYPE_ID);
-        bytes.put_u8(0);
-        bytes.put_u16_le(4 * self.0.len() as u16);
-        for v in &self.0 {
-            bytes.put_i32_le(*v as i32);
-        }
+impl PigletSerialize for ColletChecks {
+    fn serialize(&self, stream: &mut BytesMut) {
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(4);
+        stream.put_i32_le(*self as i32);
     }
+}
 
+impl PigletCodec for MSlice<'_, ColletChecks> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletCodec for MVec<ColletChecks> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletDeserialize for MVec<ColletChecks> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -3287,6 +3289,17 @@ impl PigletCodec for MVec<Vec<ColletChecks>> {
             arr.push(stream.get_i32_le().try_into()?);
         }
         Ok(MVec(arr))
+    }
+}
+
+impl PigletSerialize for MSlice<'_, ColletChecks> {
+    fn serialize(&self, bytes: &mut BytesMut) {
+        bytes.put_u8(Self::TYPE_ID);
+        bytes.put_u8(0);
+        bytes.put_u16_le(4 * self.0.len() as u16);
+        for v in self.0.as_ref() {
+            bytes.put_i32_le(*v as i32);
+        }
     }
 }
 
@@ -3313,14 +3326,9 @@ impl TryFrom<i32> for TadmModes {
 
 impl PigletCodec for TadmModes {
     const TYPE_ID: u8 = 32;
+}
 
-    fn serialize(&self, stream: &mut BytesMut) {
-        stream.put_u8(Self::TYPE_ID);
-        stream.put_u8(0);
-        stream.put_u16_le(4);
-        stream.put_i32_le(*self as i32);
-    }
-
+impl PigletDeserialize for TadmModes {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -3337,17 +3345,24 @@ impl PigletCodec for TadmModes {
     }
 }
 
-impl PigletCodec for MVec<Vec<TadmModes>> {
-    const TYPE_ID: u8 = 35;
-    fn serialize(&self, bytes: &mut BytesMut) {
-        bytes.put_u8(Self::TYPE_ID);
-        bytes.put_u8(0);
-        bytes.put_u16_le(4 * self.0.len() as u16);
-        for v in &self.0 {
-            bytes.put_i32_le(*v as i32);
-        }
+impl PigletSerialize for TadmModes {
+    fn serialize(&self, stream: &mut BytesMut) {
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(4);
+        stream.put_i32_le(*self as i32);
     }
+}
 
+impl PigletCodec for MSlice<'_, TadmModes> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletCodec for MVec<TadmModes> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletDeserialize for MVec<TadmModes> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -3364,6 +3379,17 @@ impl PigletCodec for MVec<Vec<TadmModes>> {
             arr.push(stream.get_i32_le().try_into()?);
         }
         Ok(MVec(arr))
+    }
+}
+
+impl PigletSerialize for MSlice<'_, TadmModes> {
+    fn serialize(&self, bytes: &mut BytesMut) {
+        bytes.put_u8(Self::TYPE_ID);
+        bytes.put_u8(0);
+        bytes.put_u16_le(4 * self.0.len() as u16);
+        for v in self.0.as_ref() {
+            bytes.put_i32_le(*v as i32);
+        }
     }
 }
 
@@ -3397,14 +3423,9 @@ impl TryFrom<i32> for ConfigurationIndexes {
 
 impl PigletCodec for ConfigurationIndexes {
     const TYPE_ID: u8 = 32;
+}
 
-    fn serialize(&self, stream: &mut BytesMut) {
-        stream.put_u8(Self::TYPE_ID);
-        stream.put_u8(0);
-        stream.put_u16_le(4);
-        stream.put_i32_le(*self as i32);
-    }
-
+impl PigletDeserialize for ConfigurationIndexes {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -3421,17 +3442,24 @@ impl PigletCodec for ConfigurationIndexes {
     }
 }
 
-impl PigletCodec for MVec<Vec<ConfigurationIndexes>> {
-    const TYPE_ID: u8 = 35;
-    fn serialize(&self, bytes: &mut BytesMut) {
-        bytes.put_u8(Self::TYPE_ID);
-        bytes.put_u8(0);
-        bytes.put_u16_le(4 * self.0.len() as u16);
-        for v in &self.0 {
-            bytes.put_i32_le(*v as i32);
-        }
+impl PigletSerialize for ConfigurationIndexes {
+    fn serialize(&self, stream: &mut BytesMut) {
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(4);
+        stream.put_i32_le(*self as i32);
     }
+}
 
+impl PigletCodec for MSlice<'_, ConfigurationIndexes> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletCodec for MVec<ConfigurationIndexes> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletDeserialize for MVec<ConfigurationIndexes> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -3448,6 +3476,17 @@ impl PigletCodec for MVec<Vec<ConfigurationIndexes>> {
             arr.push(stream.get_i32_le().try_into()?);
         }
         Ok(MVec(arr))
+    }
+}
+
+impl PigletSerialize for MSlice<'_, ConfigurationIndexes> {
+    fn serialize(&self, bytes: &mut BytesMut) {
+        bytes.put_u8(Self::TYPE_ID);
+        bytes.put_u8(0);
+        bytes.put_u16_le(4 * self.0.len() as u16);
+        for v in self.0.as_ref() {
+            bytes.put_i32_le(*v as i32);
+        }
     }
 }
 

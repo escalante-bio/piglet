@@ -1,7 +1,7 @@
 use crate::client::Error::{CallError, ConnectionError};
 use crate::connection::{Connection, ConnectionDetails, connect};
 use crate::object_address::ObjectAddress;
-use crate::values::{ErrorCode, PigletCodec};
+use crate::values::{ErrorCode, PigletDeserialize};
 use anyhow::{anyhow, bail};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::collections::{HashMap, HashSet};

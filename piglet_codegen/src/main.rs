@@ -142,6 +142,7 @@ struct StructId {
 #[derive(Clone, Debug)]
 struct Parameter {
     name: String,
+    is_as_ref: bool,
     rust_type: String,
     wrap_in_mvec: bool,
 }
@@ -269,14 +270,9 @@ impl TryFrom<i32> for {} {{
 
 impl PigletCodec for {} {{
   const TYPE_ID: u8 = 32;
+}}
 
-  fn serialize(&self, stream: &mut BytesMut) {{
-    stream.put_u8(Self::TYPE_ID);
-    stream.put_u8(0);
-    stream.put_u16_le(4);
-    stream.put_i32_le(*self as i32);
-  }}
-
+impl PigletDeserialize for {} {{
   fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {{
     let type_id = stream.get_u8();
     if Self::TYPE_ID != type_id {{
@@ -289,17 +285,25 @@ impl PigletCodec for {} {{
   }}
 }}
 
-impl PigletCodec for MVec<Vec<{}>> {{
-  const TYPE_ID: u8 = 35;
-  fn serialize(&self, bytes: &mut BytesMut) {{
-    bytes.put_u8(Self::TYPE_ID);
-    bytes.put_u8(0);
-    bytes.put_u16_le(4 * self.0.len() as u16);
-    for v in &self.0 {{
-      bytes.put_i32_le(*v as i32);
-    }}
+impl PigletSerialize for {} {{
+  fn serialize(&self, stream: &mut BytesMut) {{
+    stream.put_u8(Self::TYPE_ID);
+    stream.put_u8(0);
+    stream.put_u16_le(4);
+    stream.put_i32_le(*self as i32);
   }}
 
+}}
+
+impl PigletCodec for MSlice<'_, {}> {{
+  const TYPE_ID: u8 = 35;
+}}
+
+impl PigletCodec for MVec<{}> {{
+  const TYPE_ID: u8 = 35;
+}}
+
+impl PigletDeserialize for MVec<{}> {{
   fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {{
     let type_id = stream.get_u8();
     if Self::TYPE_ID != type_id {{
@@ -315,8 +319,19 @@ impl PigletCodec for MVec<Vec<{}>> {{
   }}
 }}
 
+impl PigletSerialize for MSlice<'_, {}> {{
+  fn serialize(&self, bytes: &mut BytesMut) {{
+    bytes.put_u8(Self::TYPE_ID);
+    bytes.put_u8(0);
+    bytes.put_u16_le(4 * self.0.len() as u16);
+    for v in self.0.as_ref() {{
+      bytes.put_i32_le(*v as i32);
+    }}
+  }}
+}}
+
 "#,
-                e.name, e.name, e.name
+                e.name, e.name, e.name, e.name, e.name, e.name, e.name, e.name
             ));
 
             enum_defs.push(def.join("\n"));
@@ -440,7 +455,7 @@ pub struct {} {{
                             "{}: MVec::<{}>::deserialize(&mut bytes)?.0",
                             name, rust_type
                         ),
-                        format!("MVec(s.{}).serialize(&mut buffer)", name),
+                        format!("MSlice(s.{}).serialize(&mut buffer)", name),
                     ),
                     _ => (
                         format!("{}: {}::deserialize(&mut bytes)?", name, rust_type),
@@ -457,14 +472,16 @@ pub struct {} {{
 
 impl PigletCodec for {} {{
   const TYPE_ID: u8 = 30;
+}}
 
+impl PigletSerialize for {} {{
   fn serialize(&self, stream: &mut BytesMut) {{
     stream.put_u8(Self::TYPE_ID);
     stream.put_u8(0);
     let mut buffer = BytesMut::new();
     let s = self;
 "#,
-                s.name
+                s.name, s.name,
             ));
 
             for serialize in &serializes {
@@ -476,7 +493,9 @@ impl PigletCodec for {} {{
     stream.put_u16_le(buffer.len() as u16);
     stream.put(buffer);
   }}
+}}
 
+impl PigletDeserialize for {} {{
   fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {{
     let type_id = stream.get_u8();
     if Self::TYPE_ID != type_id {{
@@ -486,7 +505,8 @@ impl PigletCodec for {} {{
     let length = stream.get_u16_le() as usize;
     let mut bytes = stream.copy_to_bytes(length);
     Ok(Self {{
-"#
+"#,
+                s.name,
             ));
 
             for deserialize in &deserializes {
@@ -499,17 +519,24 @@ impl PigletCodec for {} {{
   }}
 }}
 
-impl PigletCodec for MVec<Vec<{}>> {{
+impl PigletCodec for MSlice<'_, {}> {{
   const TYPE_ID: u8 = 31;
+}}
+
+impl PigletCodec for MVec<{}> {{
+  const TYPE_ID: u8 = 31;
+}}
+
+impl PigletSerialize for MSlice<'_, {}> {{
   fn serialize(&self, stream: &mut BytesMut) {{
     stream.put_u8(Self::TYPE_ID);
     stream.put_u8(0);
 
     let mut outer = BytesMut::new();
-    for s in &self.0 {{
+    for s in self.0.as_ref() {{
         let mut buffer = BytesMut::new();
 "#,
-                s.name
+                s.name, s.name, s.name
             ));
 
             for serialize in &serializes {
@@ -525,7 +552,15 @@ impl PigletCodec for MVec<Vec<{}>> {{
     stream.put_u16_le(outer.len() as u16);
     stream.put(outer);
   }}
+}}
 
+impl PigletSerialize for MVec<{}> {{
+  fn serialize(&self, stream: &mut BytesMut) {{
+    MSlice(&self.0).serialize(stream)
+  }}
+}}
+
+impl PigletDeserialize for MVec<{}> {{
   fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {{
     let type_id = stream.get_u8();
     if Self::TYPE_ID != type_id {{
@@ -540,7 +575,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
         let mut bytes = outer.copy_to_bytes(length);
         arr.push({} {{
 "#,
-                s.name
+                s.name, s.name, s.name
             ));
 
             for deserialize in &deserializes {
@@ -633,7 +668,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     rust_type: "String".to_string(),
                 },
                 8 => Argument {
-                    rust_type: "Vec::<u8>".to_string(),
+                    rust_type: "impl AsRef<[u8]>".to_string(),
                 },
                 18 => ReturnElement {
                     rust_type: "u8".to_string(),
@@ -690,7 +725,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     rust_type: "bool".to_string(),
                 },
                 41 => Argument {
-                    rust_type: "Vec::<i16>".to_string(),
+                    rust_type: "impl AsRef<[i16]>".to_string(),
                 },
                 43 => ReturnElement {
                     rust_type: "Vec::<i16>".to_string(),
@@ -699,7 +734,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     rust_type: "Vec::<i16>".to_string(),
                 },
                 45 => Argument {
-                    rust_type: "Vec::<u16>".to_string(),
+                    rust_type: "impl AsRef<[u16]>".to_string(),
                 },
                 47 => ReturnElement {
                     rust_type: "Vec::<u16>".to_string(),
@@ -708,7 +743,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     rust_type: "Vec::<u16>".to_string(),
                 },
                 49 => Argument {
-                    rust_type: "Vec::<i32>".to_string(),
+                    rust_type: "impl AsRef<[i32]>".to_string(),
                 },
                 51 => ReturnElement {
                     rust_type: "Vec::<i32>".to_string(),
@@ -717,7 +752,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     rust_type: "Vec::<i32>".to_string(),
                 },
                 53 => Argument {
-                    rust_type: "Vec::<u32>".to_string(),
+                    rust_type: "impl AsRef<[u32]>".to_string(),
                 },
                 55 => ReturnElement {
                     rust_type: "Vec::<u32>".to_string(),
@@ -758,7 +793,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     };
                     parameter_i += 2;
                     Argument {
-                        rust_type: format!("Vec::<{}>", e),
+                        rust_type: format!("impl AsRef<[{}]>", e),
                     }
                 }
                 64 => {
@@ -776,11 +811,11 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     };
                     parameter_i += 2;
                     ReturnValue {
-                        rust_type: format!("Vec::<{}>", e),
+                        rust_type: format!("{}", e),
                     }
                 }
                 66 => Argument {
-                    rust_type: "Vec::<bool>".to_string(),
+                    rust_type: "impl AsRef<[bool]>".to_string(),
                 },
                 68 => ReturnElement {
                     rust_type: "Vec::<bool>".to_string(),
@@ -842,7 +877,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     };
                     parameter_i += 2;
                     Argument {
-                        rust_type: format!("Vec::<{}>", e),
+                        rust_type: format!("impl AsRef<[{}]>", e),
                     }
                 }
                 85 => {
@@ -860,7 +895,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
                     };
                     parameter_i += 2;
                     ReturnValue {
-                        rust_type: format!("Vec::<{}>", e),
+                        rust_type: format!("{}", e),
                     }
                 }
                 102 => Argument {
@@ -874,6 +909,10 @@ impl PigletCodec for MVec<Vec<{}>> {{
                 },
                 _ => anyhow::bail!("Unknown type {}", raw_type),
             };
+            let is_as_ref = match raw_type {
+                8 | 41 | 45 | 49 | 53 | 61 | 66 | 82 => true,
+                _ => false,
+            };
             let wrap_in_mvec = match raw_type {
                 61 | 64 | 82 | 85 => true,
                 _ => false,
@@ -881,16 +920,19 @@ impl PigletCodec for MVec<Vec<{}>> {{
             match parsed_type {
                 Argument { rust_type } => arguments.push(Parameter {
                     name,
+                    is_as_ref,
                     rust_type,
                     wrap_in_mvec,
                 }),
                 ReturnElement { rust_type } => return_elements.push(Parameter {
                     name,
+                    is_as_ref,
                     rust_type,
                     wrap_in_mvec,
                 }),
                 ReturnValue { rust_type } => return_values.push(Parameter {
                     name,
+                    is_as_ref,
                     rust_type,
                     wrap_in_mvec,
                 }),
@@ -947,7 +989,12 @@ pub struct {}Reply {{
             format!("{}Reply", method.name)
         } else if return_values.len() == 1 {
             let value = &return_values[0];
-            format!("/* {}= */ {}", value.name, value.rust_type)
+            let wrapped = if value.wrap_in_mvec {
+                format!("Vec::<{}>", value.rust_type)
+            } else {
+                value.rust_type.clone()
+            };
+            format!("/* {}= */ {}", value.name, wrapped)
         } else {
             "()".to_string()
         };
@@ -955,12 +1002,15 @@ pub struct {}Reply {{
         contents.push(format!("  ) -> Result<{}, Error> {{", return_type));
         contents.push("    let mut args = BytesMut::new();".to_string());
         for argument in &arguments {
-            let source = if argument.wrap_in_mvec {
-                // TODO(april): this sucks but I think I need to split PigletCodec if I don't want
-                // to do this.
-                format!("MVec({}.clone())", argument.name)
+            let usage = if argument.is_as_ref {
+                format!("{}.as_ref()", argument.name)
             } else {
                 argument.name.clone()
+            };
+            let source = if argument.wrap_in_mvec {
+                format!("MSlice({})", usage)
+            } else {
+                usage
             };
             contents.push(format!("    {}.serialize(&mut args);", source));
         }
@@ -980,11 +1030,16 @@ pub struct {}Reply {{
                 .to_string(),
             );
             for argument in &arguments {
+                let usage = if argument.is_as_ref {
+                    format!("{}.as_ref()", argument.name)
+                } else {
+                    argument.name.clone()
+                };
                 contents.push(format!(
                     r#"
                         format!("  {}: {{:?}}", {}),
     "#,
-                    argument.name, argument.name,
+                    argument.name, usage
                 ));
             }
             contents.push(format!(
@@ -1087,11 +1142,11 @@ async fn dump_module(
             r#"
 use anyhow::anyhow;
 use bytes::{{Buf, BufMut, Bytes, BytesMut}};
-use crate::traits::MVec;
+use crate::traits::{{MSlice, MVec}};
 use piglet_client::{{
   client::{{Error, Error::ConnectionError, RobotClient, with_context}},
   object_address::ObjectAddress,
-  values::{{PigletCodec, NetworkResult}},
+  values::{{PigletCodec, PigletDeserialize, PigletSerialize, NetworkResult}},
 }};
 use std::sync::Arc;
 

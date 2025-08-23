@@ -2,13 +2,13 @@ use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelConfiguration;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::ChannelType;
 use crate::nimbus_hd_1_0::nimbus_core_global_objects::Rail;
 
-use crate::traits::MVec;
+use crate::traits::{MSlice, MVec};
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
     client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
-    values::{NetworkResult, PigletCodec},
+    values::{NetworkResult, PigletCodec, PigletDeserialize, PigletSerialize},
 };
 use std::sync::Arc;
 
@@ -65,13 +65,13 @@ impl NimbusCoreBarcodeScanner0BarcodeModuleCpu {
         Ok(())
     }
 
-    pub async fn download_write(&self, download_data: Vec<u8>) -> Result<(), Error> {
+    pub async fn download_write(&self, download_data: impl AsRef<[u8]>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        download_data.serialize(&mut args);
+        download_data.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
             || {
-                let parameters = vec![format!("  download_data: {:?}", download_data)];
+                let parameters = vec![format!("  download_data: {:?}", download_data.as_ref())];
                 format!(
                     "in call to NimbusCoreBarcodeScanner0BarcodeModuleCpu.DownloadWrite(\n{}\n)",
                     parameters.join("\n")
@@ -353,14 +353,14 @@ impl NimbusCoreBarcodeScanner0BarcodeModuleCpu {
     pub async fn download_write_compressed_data(
         &self,
 
-        download_data: Vec<u8>,
+        download_data: impl AsRef<[u8]>,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        download_data.serialize(&mut args);
+        download_data.as_ref().serialize(&mut args);
         let (count, mut stream) = with_context(
             self.robot.act(&self.address, 2, 3, 6, args.freeze()).await,
             || {
-                let parameters = vec![format!("  download_data: {:?}", download_data)];
+                let parameters = vec![format!("  download_data: {:?}", download_data.as_ref())];
                 format!(
                     "in call to NimbusCoreBarcodeScanner0BarcodeModuleCpu.DownloadWriteCompressedData(\n{}\n)",
                     parameters.join("\n")
@@ -583,14 +583,9 @@ impl TryFrom<i32> for CompressionAlgorithm {
 
 impl PigletCodec for CompressionAlgorithm {
     const TYPE_ID: u8 = 32;
+}
 
-    fn serialize(&self, stream: &mut BytesMut) {
-        stream.put_u8(Self::TYPE_ID);
-        stream.put_u8(0);
-        stream.put_u16_le(4);
-        stream.put_i32_le(*self as i32);
-    }
-
+impl PigletDeserialize for CompressionAlgorithm {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -607,17 +602,24 @@ impl PigletCodec for CompressionAlgorithm {
     }
 }
 
-impl PigletCodec for MVec<Vec<CompressionAlgorithm>> {
-    const TYPE_ID: u8 = 35;
-    fn serialize(&self, bytes: &mut BytesMut) {
-        bytes.put_u8(Self::TYPE_ID);
-        bytes.put_u8(0);
-        bytes.put_u16_le(4 * self.0.len() as u16);
-        for v in &self.0 {
-            bytes.put_i32_le(*v as i32);
-        }
+impl PigletSerialize for CompressionAlgorithm {
+    fn serialize(&self, stream: &mut BytesMut) {
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(4);
+        stream.put_i32_le(*self as i32);
     }
+}
 
+impl PigletCodec for MSlice<'_, CompressionAlgorithm> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletCodec for MVec<CompressionAlgorithm> {
+    const TYPE_ID: u8 = 35;
+}
+
+impl PigletDeserialize for MVec<CompressionAlgorithm> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -637,6 +639,17 @@ impl PigletCodec for MVec<Vec<CompressionAlgorithm>> {
     }
 }
 
+impl PigletSerialize for MSlice<'_, CompressionAlgorithm> {
+    fn serialize(&self, bytes: &mut BytesMut) {
+        bytes.put_u8(Self::TYPE_ID);
+        bytes.put_u8(0);
+        bytes.put_u16_le(4 * self.0.len() as u16);
+        for v in self.0.as_ref() {
+            bytes.put_i32_le(*v as i32);
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct SUpTime {
     pub days: u8,
@@ -648,7 +661,9 @@ pub struct SUpTime {
 
 impl PigletCodec for SUpTime {
     const TYPE_ID: u8 = 30;
+}
 
+impl PigletSerialize for SUpTime {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0);
@@ -664,7 +679,9 @@ impl PigletCodec for SUpTime {
         stream.put_u16_le(buffer.len() as u16);
         stream.put(buffer);
     }
+}
 
+impl PigletDeserialize for SUpTime {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
@@ -687,14 +704,21 @@ impl PigletCodec for SUpTime {
     }
 }
 
-impl PigletCodec for MVec<Vec<SUpTime>> {
+impl PigletCodec for MSlice<'_, SUpTime> {
     const TYPE_ID: u8 = 31;
+}
+
+impl PigletCodec for MVec<SUpTime> {
+    const TYPE_ID: u8 = 31;
+}
+
+impl PigletSerialize for MSlice<'_, SUpTime> {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0);
 
         let mut outer = BytesMut::new();
-        for s in &self.0 {
+        for s in self.0.as_ref() {
             let mut buffer = BytesMut::new();
 
             s.days.serialize(&mut buffer);
@@ -710,7 +734,15 @@ impl PigletCodec for MVec<Vec<SUpTime>> {
         stream.put_u16_le(outer.len() as u16);
         stream.put(outer);
     }
+}
 
+impl PigletSerialize for MVec<SUpTime> {
+    fn serialize(&self, stream: &mut BytesMut) {
+        MSlice(&self.0).serialize(stream)
+    }
+}
+
+impl PigletDeserialize for MVec<SUpTime> {
     fn deserialize(stream: &mut Bytes) -> Result<Self, Error> {
         let type_id = stream.get_u8();
         if Self::TYPE_ID != type_id {
