@@ -930,6 +930,7 @@ impl PigletCodec for MVec<Vec<{}>> {{
         if return_elements.len() > 0 {
             let mut struct_def = vec![format!(
                 r#"
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct {}Reply {{
 "#,
