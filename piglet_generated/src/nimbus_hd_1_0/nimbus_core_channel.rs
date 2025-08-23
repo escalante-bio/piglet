@@ -6,7 +6,7 @@ use crate::traits::MVec;
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
-    client::{Error, Error::ConnectionError, RobotClient},
+    client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
     values::{NetworkResult, PigletCodec},
 };
@@ -117,10 +117,20 @@ impl NimbusCoreChannel {
         let mut args = BytesMut::new();
         command_timeout.serialize(&mut args);
         request.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 1, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  command_timeout: {:?}", command_timeout),
+                    format!("  request: {:?}", request),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.Command(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -131,10 +141,17 @@ impl NimbusCoreChannel {
     pub async fn send(&self, request: String) -> Result<(), Error> {
         let mut args = BytesMut::new();
         request.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  request: {:?}", request)];
+                format!(
+                    "in call to NimbusCoreChannel.Send(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -143,10 +160,11 @@ impl NimbusCoreChannel {
 
     pub async fn receive_no_wait(&self) -> Result</* response= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
+            || "in call to NimbusCoreChannel.ReceiveNoWait()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -157,10 +175,17 @@ impl NimbusCoreChannel {
     pub async fn receive(&self, command_timeout: i32) -> Result</* response= */ String, Error> {
         let mut args = BytesMut::new();
         command_timeout.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 4, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  command_timeout: {:?}", command_timeout)];
+                format!(
+                    "in call to NimbusCoreChannel.Receive(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -170,10 +195,11 @@ impl NimbusCoreChannel {
 
     pub async fn last_command(&self) -> Result</* request= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 5, args.freeze()).await,
+            || "in call to NimbusCoreChannel.LastCommand()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -196,10 +222,23 @@ impl NimbusCoreChannel {
         z_final.serialize(&mut args);
         volume.serialize(&mut args);
         collet_check.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_start_position: {:?}", z_start_position),
+                    format!("  z_stop_position: {:?}", z_stop_position),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  volume: {:?}", volume),
+                    format!("  collet_check: {:?}", collet_check),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.PickupTip(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -223,10 +262,24 @@ impl NimbusCoreChannel {
         volume.serialize(&mut args);
         length.serialize(&mut args);
         collet_check.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 7, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 7, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_start_position: {:?}", z_start_position),
+                    format!("  z_stop_position: {:?}", z_stop_position),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  volume: {:?}", volume),
+                    format!("  length: {:?}", length),
+                    format!("  collet_check: {:?}", collet_check),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.PickupNeedle(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -244,10 +297,21 @@ impl NimbusCoreChannel {
         z_start_position.serialize(&mut args);
         z_stop_position.serialize(&mut args);
         z_final.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 8, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 8, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_start_position: {:?}", z_start_position),
+                    format!("  z_stop_position: {:?}", z_stop_position),
+                    format!("  z_final: {:?}", z_final),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.DropTip(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -263,10 +327,20 @@ impl NimbusCoreChannel {
         let mut args = BytesMut::new();
         z_start_position.serialize(&mut args);
         z_stop_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 9, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 9, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_start_position: {:?}", z_start_position),
+                    format!("  z_stop_position: {:?}", z_stop_position),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.DropTipNoZFinal(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -332,10 +406,45 @@ impl NimbusCoreChannel {
         limit_curve_index.serialize(&mut args);
         recording_mode.serialize(&mut args);
         measurement_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 10, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 10, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  aspirate_mode: {:?}", aspirate_mode),
+                    format!("  liquid_seek_height: {:?}", liquid_seek_height),
+                    format!("  submerge_depth: {:?}", submerge_depth),
+                    format!("  follow_depth: {:?}", follow_depth),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  clot_check_height: {:?}", clot_check_height),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
+                    format!("  blowout_volume: {:?}", blowout_volume),
+                    format!("  prewet_volume: {:?}", prewet_volume),
+                    format!("  aspirate_volume: {:?}", aspirate_volume),
+                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  aspirate_speed: {:?}", aspirate_speed),
+                    format!("  settling_time: {:?}", settling_time),
+                    format!("  mix_volume: {:?}", mix_volume),
+                    format!("  mix_cycles: {:?}", mix_cycles),
+                    format!("  mix_position: {:?}", mix_position),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
+                    format!("  mix_speed: {:?}", mix_speed),
+                    format!("  tube_section_height: {:?}", tube_section_height),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
+                    format!("  capacitive_lld_steepness: {:?}", capacitive_lld_steepness),
+                    format!("  capacitive_lld_offset: {:?}", capacitive_lld_offset),
+                    format!("  tadm_enabled: {:?}", tadm_enabled),
+                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  recording_mode: {:?}", recording_mode),
+                    format!("  measurement_id: {:?}", measurement_id),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.AspirateCapacitiveLld(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -411,10 +520,50 @@ impl NimbusCoreChannel {
         recording_mode.serialize(&mut args);
         measurement_id.serialize(&mut args);
         tip_is_filtered.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 11, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 11, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  aspirate_mode: {:?}", aspirate_mode),
+                    format!("  liquid_seek_height: {:?}", liquid_seek_height),
+                    format!("  submerge_depth: {:?}", submerge_depth),
+                    format!("  follow_depth: {:?}", follow_depth),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
+                    format!("  blowout_volume: {:?}", blowout_volume),
+                    format!("  prewet_volume: {:?}", prewet_volume),
+                    format!("  aspirate_volume: {:?}", aspirate_volume),
+                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  aspirate_speed: {:?}", aspirate_speed),
+                    format!("  settling_time: {:?}", settling_time),
+                    format!("  mix_volume: {:?}", mix_volume),
+                    format!("  mix_cycles: {:?}", mix_cycles),
+                    format!("  mix_position: {:?}", mix_position),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
+                    format!("  mix_speed: {:?}", mix_speed),
+                    format!("  tube_section_height: {:?}", tube_section_height),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
+                    format!("  lld_mode: {:?}", lld_mode),
+                    format!("  capacitive_lld_steepness: {:?}", capacitive_lld_steepness),
+                    format!("  capacitive_lld_offset: {:?}", capacitive_lld_offset),
+                    format!("  pressure_lld_steepness: {:?}", pressure_lld_steepness),
+                    format!("  pressure_lld_offset: {:?}", pressure_lld_offset),
+                    format!("  seek_speed: {:?}", seek_speed),
+                    format!("  lld_height_difference: {:?}", lld_height_difference),
+                    format!("  tadm_enabled: {:?}", tadm_enabled),
+                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  recording_mode: {:?}", recording_mode),
+                    format!("  measurement_id: {:?}", measurement_id),
+                    format!("  tip_is_filtered: {:?}", tip_is_filtered),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.AspiratePressureLld(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -478,10 +627,44 @@ impl NimbusCoreChannel {
         limit_curve_index.serialize(&mut args);
         recording_mode.serialize(&mut args);
         measurement_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 12, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 12, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  aspirate_mode: {:?}", aspirate_mode),
+                    format!("  aspirate_height: {:?}", aspirate_height),
+                    format!("  follow_depth: {:?}", follow_depth),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  air_height: {:?}", air_height),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
+                    format!("  blowout_volume: {:?}", blowout_volume),
+                    format!("  prewet_volume: {:?}", prewet_volume),
+                    format!("  aspirate_volume: {:?}", aspirate_volume),
+                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  aspirate_speed: {:?}", aspirate_speed),
+                    format!("  settling_time: {:?}", settling_time),
+                    format!("  mix_volume: {:?}", mix_volume),
+                    format!("  mix_cycles: {:?}", mix_cycles),
+                    format!("  mix_position: {:?}", mix_position),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
+                    format!("  mix_speed: {:?}", mix_speed),
+                    format!("  tube_section_height: {:?}", tube_section_height),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
+                    format!("  bottom_search: {:?}", bottom_search),
+                    format!("  aspirate_offset: {:?}", aspirate_offset),
+                    format!("  tadm_enabled: {:?}", tadm_enabled),
+                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  recording_mode: {:?}", recording_mode),
+                    format!("  measurement_id: {:?}", measurement_id),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.Aspirate(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -543,10 +726,43 @@ impl NimbusCoreChannel {
         limit_curve_index.serialize(&mut args);
         recording_mode.serialize(&mut args);
         measurement_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 13, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 13, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  liquid_seek_height: {:?}", liquid_seek_height),
+                    format!("  submerge_depth: {:?}", submerge_depth),
+                    format!("  follow_depth: {:?}", follow_depth),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
+                    format!("  dispense_volume: {:?}", dispense_volume),
+                    format!("  stop_back_volume: {:?}", stop_back_volume),
+                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  dispense_speed: {:?}", dispense_speed),
+                    format!("  cutoff_speed: {:?}", cutoff_speed),
+                    format!("  settling_time: {:?}", settling_time),
+                    format!("  mix_volume: {:?}", mix_volume),
+                    format!("  mix_cycles: {:?}", mix_cycles),
+                    format!("  mix_position: {:?}", mix_position),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
+                    format!("  mix_speed: {:?}", mix_speed),
+                    format!("  tube_section_height: {:?}", tube_section_height),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
+                    format!("  capacitive_lld_steepness: {:?}", capacitive_lld_steepness),
+                    format!("  capacitive_lld_offset: {:?}", capacitive_lld_offset),
+                    format!("  tadm_enabled: {:?}", tadm_enabled),
+                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  recording_mode: {:?}", recording_mode),
+                    format!("  measurement_id: {:?}", measurement_id),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.DispenseLld(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -608,10 +824,43 @@ impl NimbusCoreChannel {
         limit_curve_index.serialize(&mut args);
         recording_mode.serialize(&mut args);
         measurement_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 14, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 14, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  dispense_height: {:?}", dispense_height),
+                    format!("  follow_depth: {:?}", follow_depth),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  air_height: {:?}", air_height),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
+                    format!("  dispense_volume: {:?}", dispense_volume),
+                    format!("  stop_back_volume: {:?}", stop_back_volume),
+                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  dispense_speed: {:?}", dispense_speed),
+                    format!("  cutoff_speed: {:?}", cutoff_speed),
+                    format!("  settling_time: {:?}", settling_time),
+                    format!("  mix_volume: {:?}", mix_volume),
+                    format!("  mix_cycles: {:?}", mix_cycles),
+                    format!("  mix_position: {:?}", mix_position),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance),
+                    format!("  mix_speed: {:?}", mix_speed),
+                    format!("  tube_section_height: {:?}", tube_section_height),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
+                    format!("  bottom_search: {:?}", bottom_search),
+                    format!("  dispense_offset: {:?}", dispense_offset),
+                    format!("  tadm_enabled: {:?}", tadm_enabled),
+                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  recording_mode: {:?}", recording_mode),
+                    format!("  measurement_id: {:?}", measurement_id),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.Dispense(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -655,10 +904,34 @@ impl NimbusCoreChannel {
         limit_curve_index.serialize(&mut args);
         recording_mode.serialize(&mut args);
         measurement_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 15, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 15, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  dispense_height: {:?}", dispense_height),
+                    format!("  follow_depth: {:?}", follow_depth),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  air_height: {:?}", air_height),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed),
+                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  dispense_speed: {:?}", dispense_speed),
+                    format!("  cutoff_speed: {:?}", cutoff_speed),
+                    format!("  settling_time: {:?}", settling_time),
+                    format!("  tube_section_height: {:?}", tube_section_height),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio),
+                    format!("  tadm_enabled: {:?}", tadm_enabled),
+                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  recording_mode: {:?}", recording_mode),
+                    format!("  measurement_id: {:?}", measurement_id),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.EmptyTip(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -667,10 +940,11 @@ impl NimbusCoreChannel {
 
     pub async fn y_pre_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 16, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 16, args.freeze()).await,
+            || "in call to NimbusCoreChannel.YPreInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -679,10 +953,11 @@ impl NimbusCoreChannel {
 
     pub async fn y_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 17, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 17, args.freeze()).await,
+            || "in call to NimbusCoreChannel.YInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -692,10 +967,17 @@ impl NimbusCoreChannel {
     pub async fn y_move_relative(&self, distance: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         distance.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 18, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 18, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  distance: {:?}", distance)];
+                format!(
+                    "in call to NimbusCoreChannel.YMoveRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -713,10 +995,21 @@ impl NimbusCoreChannel {
         distance.serialize(&mut args);
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 19, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 19, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  distance: {:?}", distance),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.YMoveRelativeSpeed(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -726,10 +1019,17 @@ impl NimbusCoreChannel {
     pub async fn y_move_absolute(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 20, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 20, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreChannel.YMoveAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -747,10 +1047,21 @@ impl NimbusCoreChannel {
         position.serialize(&mut args);
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 21, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 21, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  position: {:?}", position),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.YMoveAbsoluteSpeed(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -761,10 +1072,20 @@ impl NimbusCoreChannel {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 22, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 22, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  position: {:?}", position),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.YSeekLld(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -773,10 +1094,11 @@ impl NimbusCoreChannel {
 
     pub async fn y_move_negative_stall(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 23, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 23, args.freeze()).await,
+            || "in call to NimbusCoreChannel.YMoveNegativeStall()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -794,10 +1116,21 @@ impl NimbusCoreChannel {
         position.serialize(&mut args);
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 24, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 24, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  position: {:?}", position),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.YMoveAbsoluteGripper(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -806,10 +1139,11 @@ impl NimbusCoreChannel {
 
     pub async fn z_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 25, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 25, args.freeze()).await,
+            || "in call to NimbusCoreChannel.ZInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -818,10 +1152,11 @@ impl NimbusCoreChannel {
 
     pub async fn z_move_safe(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 26, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 26, args.freeze()).await,
+            || "in call to NimbusCoreChannel.ZMoveSafe()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -831,10 +1166,17 @@ impl NimbusCoreChannel {
     pub async fn z_move_relative(&self, distance: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         distance.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 27, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 27, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  distance: {:?}", distance)];
+                format!(
+                    "in call to NimbusCoreChannel.ZMoveRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -852,10 +1194,21 @@ impl NimbusCoreChannel {
         distance.serialize(&mut args);
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 28, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 28, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  distance: {:?}", distance),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.ZMoveRelativeSpeed(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -865,10 +1218,17 @@ impl NimbusCoreChannel {
     pub async fn z_move_absolute(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 29, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 29, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreChannel.ZMoveAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -886,10 +1246,21 @@ impl NimbusCoreChannel {
         position.serialize(&mut args);
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 30, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 30, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  position: {:?}", position),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.ZMoveAbsoluteSpeed(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -899,10 +1270,17 @@ impl NimbusCoreChannel {
     pub async fn z_move_traverse(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 31, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 31, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreChannel.ZMoveTraverse(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -920,10 +1298,21 @@ impl NimbusCoreChannel {
         position.serialize(&mut args);
         min_position.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 32, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 32, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  position: {:?}", position),
+                    format!("  min_position: {:?}", min_position),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.ZSeekLld(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -941,10 +1330,21 @@ impl NimbusCoreChannel {
         position.serialize(&mut args);
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 33, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 33, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  position: {:?}", position),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.ZMoveAbsoluteGripper(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -953,10 +1353,11 @@ impl NimbusCoreChannel {
 
     pub async fn dispense_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 34, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 34, args.freeze()).await,
+            || "in call to NimbusCoreChannel.DispenseInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -965,10 +1366,11 @@ impl NimbusCoreChannel {
 
     pub async fn dispense_empty(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 35, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 35, args.freeze()).await,
+            || "in call to NimbusCoreChannel.DispenseEmpty()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -978,10 +1380,17 @@ impl NimbusCoreChannel {
     pub async fn dispense_move_relative(&self, distance: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         distance.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 36, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 36, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  distance: {:?}", distance)];
+                format!(
+                    "in call to NimbusCoreChannel.DispenseMoveRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -990,10 +1399,11 @@ impl NimbusCoreChannel {
 
     pub async fn squeeze_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 37, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 37, args.freeze()).await,
+            || "in call to NimbusCoreChannel.SqueezeInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1002,10 +1412,11 @@ impl NimbusCoreChannel {
 
     pub async fn squeeze_on(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 38, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 38, args.freeze()).await,
+            || "in call to NimbusCoreChannel.SqueezeOn()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1014,10 +1425,11 @@ impl NimbusCoreChannel {
 
     pub async fn squeeze_off(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 39, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 39, args.freeze()).await,
+            || "in call to NimbusCoreChannel.SqueezeOff()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1026,10 +1438,11 @@ impl NimbusCoreChannel {
 
     pub async fn lld_on(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 40, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 40, args.freeze()).await,
+            || "in call to NimbusCoreChannel.LldOn()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1038,10 +1451,11 @@ impl NimbusCoreChannel {
 
     pub async fn lld_off(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 41, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 41, args.freeze()).await,
+            || "in call to NimbusCoreChannel.LldOff()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1051,10 +1465,17 @@ impl NimbusCoreChannel {
     pub async fn paired_channel(&self, channel: i16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         channel.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 42, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 42, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  channel: {:?}", channel)];
+                format!(
+                    "in call to NimbusCoreChannel.PairedChannel(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1063,10 +1484,11 @@ impl NimbusCoreChannel {
 
     pub async fn synchronize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 43, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 43, args.freeze()).await,
+            || "in call to NimbusCoreChannel.Synchronize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1075,10 +1497,11 @@ impl NimbusCoreChannel {
 
     pub async fn is_initialized(&self) -> Result</* initialized= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 44, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 44, args.freeze()).await,
+            || "in call to NimbusCoreChannel.IsInitialized()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1088,10 +1511,11 @@ impl NimbusCoreChannel {
 
     pub async fn is_tip_present(&self) -> Result</* present= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 45, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 45, args.freeze()).await,
+            || "in call to NimbusCoreChannel.IsTipPresent()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1101,10 +1525,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_lld_status(&self) -> Result</* status= */ i16, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 46, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 46, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetLldStatus()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1114,10 +1539,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_sensor_status(&self) -> Result</* status= */ i16, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 47, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 47, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetSensorStatus()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1127,10 +1553,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_y_position(&self) -> Result</* position= */ i32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 48, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 48, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetYPosition()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1140,10 +1567,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_y_home_offset(&self) -> Result</* home_offset= */ i32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 49, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 49, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetYHomeOffset()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1154,10 +1582,17 @@ impl NimbusCoreChannel {
     pub async fn set_y_home_offset(&self, home_offset: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         home_offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 50, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 50, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  home_offset: {:?}", home_offset)];
+                format!(
+                    "in call to NimbusCoreChannel.SetYHomeOffset(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1166,10 +1601,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_z_position(&self) -> Result</* position= */ i32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 51, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 51, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetZPosition()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1179,10 +1615,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_z_home_offset(&self) -> Result</* home_offset= */ i32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 52, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 52, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetZHomeOffset()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1193,10 +1630,17 @@ impl NimbusCoreChannel {
     pub async fn set_z_home_offset(&self, home_offset: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         home_offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 53, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 53, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  home_offset: {:?}", home_offset)];
+                format!(
+                    "in call to NimbusCoreChannel.SetZHomeOffset(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1205,10 +1649,11 @@ impl NimbusCoreChannel {
 
     pub async fn calibrate_position_reset(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 54, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 54, args.freeze()).await,
+            || "in call to NimbusCoreChannel.CalibratePositionReset()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1217,10 +1662,11 @@ impl NimbusCoreChannel {
 
     pub async fn calibrate_lld(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 55, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 55, args.freeze()).await,
+            || "in call to NimbusCoreChannel.CalibrateLld()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1236,10 +1682,20 @@ impl NimbusCoreChannel {
         let mut args = BytesMut::new();
         z_start_position.serialize(&mut args);
         z_stop_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 56, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 56, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_start_position: {:?}", z_start_position),
+                    format!("  z_stop_position: {:?}", z_stop_position),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.CalibrateSqueeze(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1261,10 +1717,23 @@ impl NimbusCoreChannel {
         z_final.serialize(&mut args);
         volume.serialize(&mut args);
         collet_check.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 57, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 57, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_start_position: {:?}", z_start_position),
+                    format!("  z_stop_position: {:?}", z_stop_position),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  volume: {:?}", volume),
+                    format!("  collet_check: {:?}", collet_check),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.CalibrateTipHeight(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1286,10 +1755,23 @@ impl NimbusCoreChannel {
         z_final.serialize(&mut args);
         volume.serialize(&mut args);
         collet_check.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 58, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 58, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_start_position: {:?}", z_start_position),
+                    format!("  z_stop_position: {:?}", z_stop_position),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  volume: {:?}", volume),
+                    format!("  collet_check: {:?}", collet_check),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.CalibrateDispenseCheck(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1306,10 +1788,20 @@ impl NimbusCoreChannel {
         let mut args = BytesMut::new();
         direction.serialize(&mut args);
         index.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 59, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 59, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  direction: {:?}", direction),
+                    format!("  index: {:?}", index),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.CalibrateDispenseCheckData(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1319,10 +1811,11 @@ impl NimbusCoreChannel {
 
     pub async fn calibrate_touchoff(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 60, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 60, args.freeze()).await,
+            || "in call to NimbusCoreChannel.CalibrateTouchoff()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1331,10 +1824,11 @@ impl NimbusCoreChannel {
 
     pub async fn erase_limit_curves(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 61, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 61, args.freeze()).await,
+            || "in call to NimbusCoreChannel.EraseLimitCurves()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1356,10 +1850,23 @@ impl NimbusCoreChannel {
         lower_limit_y.serialize(&mut args);
         upper_limit_x.serialize(&mut args);
         upper_limit_y.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 62, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 62, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  name: {:?}", name),
+                    format!("  lower_limit_x: {:?}", lower_limit_x),
+                    format!("  lower_limit_y: {:?}", lower_limit_y),
+                    format!("  upper_limit_x: {:?}", upper_limit_x),
+                    format!("  upper_limit_y: {:?}", upper_limit_y),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.CreateLimitCurve(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1369,10 +1876,11 @@ impl NimbusCoreChannel {
 
     pub async fn reset_tadm_fifo(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 63, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 63, args.freeze()).await,
+            || "in call to NimbusCoreChannel.ResetTadmFifo()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1381,10 +1889,11 @@ impl NimbusCoreChannel {
 
     pub async fn retrieve_tadm_data(&self) -> Result<RetrieveTadmDataReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 64, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 64, args.freeze()).await,
+            || "in call to NimbusCoreChannel.RetrieveTadmData()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1394,10 +1903,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_limit_curve_names(&self) -> Result<GetLimitCurveNamesReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 65, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 65, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetLimitCurveNames()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1412,10 +1922,17 @@ impl NimbusCoreChannel {
     ) -> Result<GetLimitCurveInfoReply, Error> {
         let mut args = BytesMut::new();
         name.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 66, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 66, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  name: {:?}", name)];
+                format!(
+                    "in call to NimbusCoreChannel.GetLimitCurveInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 3 {
             return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
@@ -1432,10 +1949,17 @@ impl NimbusCoreChannel {
     pub async fn set_tadm_enable(&self, enable: bool) -> Result<(), Error> {
         let mut args = BytesMut::new();
         enable.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 67, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 67, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  enable: {:?}", enable)];
+                format!(
+                    "in call to NimbusCoreChannel.SetTADMEnable(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1444,10 +1968,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_tadm_enable(&self) -> Result</* enable= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 68, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 68, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetTADMEnable()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1466,10 +1991,27 @@ impl NimbusCoreChannel {
         pressure_threshold.serialize(&mut args);
         minimum_pressure_difference.serialize(&mut args);
         maximum_pressure_difference.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 69, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 69, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  pressure_threshold: {:?}", pressure_threshold),
+                    format!(
+                        "  minimum_pressure_difference: {:?}",
+                        minimum_pressure_difference
+                    ),
+                    format!(
+                        "  maximum_pressure_difference: {:?}",
+                        maximum_pressure_difference
+                    ),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.EnableMAD(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1478,10 +2020,11 @@ impl NimbusCoreChannel {
 
     pub async fn disable_mad(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 70, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 70, args.freeze()).await,
+            || "in call to NimbusCoreChannel.DisableMAD()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1490,10 +2033,11 @@ impl NimbusCoreChannel {
 
     pub async fn enable_adc(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 71, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 71, args.freeze()).await,
+            || "in call to NimbusCoreChannel.EnableADC()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1502,10 +2046,11 @@ impl NimbusCoreChannel {
 
     pub async fn disable_adc(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 72, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 72, args.freeze()).await,
+            || "in call to NimbusCoreChannel.DisableADC()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1515,10 +2060,17 @@ impl NimbusCoreChannel {
     pub async fn set_z_default_speed(&self, speed: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         speed.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 73, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 73, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  speed: {:?}", speed)];
+                format!(
+                    "in call to NimbusCoreChannel.SetZDefaultSpeed(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1527,10 +2079,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_z_default_speed(&self) -> Result</* speed= */ i32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 74, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 74, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetZDefaultSpeed()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1551,10 +2104,22 @@ impl NimbusCoreChannel {
         z_min_position.serialize(&mut args);
         z_final_position.serialize(&mut args);
         z_velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 75, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 75, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_position: {:?}", z_position),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  z_final_position: {:?}", z_final_position),
+                    format!("  z_velocity: {:?}", z_velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.ZSeekObstacle(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1564,10 +2129,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_pressure(&self) -> Result</* pressure= */ i16, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 76, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 76, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetPressure()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1577,10 +2143,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_y_resolution(&self) -> Result</* resolution= */ i32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 77, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 77, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetYResolution()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1591,10 +2158,17 @@ impl NimbusCoreChannel {
     pub async fn set_y_resolution(&self, resolution: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         resolution.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 78, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 78, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  resolution: {:?}", resolution)];
+                format!(
+                    "in call to NimbusCoreChannel.SetYResolution(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1604,10 +2178,17 @@ impl NimbusCoreChannel {
     pub async fn pressure_mode(&self, mode: i16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         mode.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 79, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 79, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  mode: {:?}", mode)];
+                format!(
+                    "in call to NimbusCoreChannel.PressureMode(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1617,10 +2198,17 @@ impl NimbusCoreChannel {
     pub async fn pressure_gain(&self, gain: i16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         gain.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 80, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 80, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  gain: {:?}", gain)];
+                format!(
+                    "in call to NimbusCoreChannel.PressureGain(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1630,10 +2218,17 @@ impl NimbusCoreChannel {
     pub async fn pressure_offset(&self, offset: i16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 81, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 81, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  offset: {:?}", offset)];
+                format!(
+                    "in call to NimbusCoreChannel.PressureOffset(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1643,10 +2238,17 @@ impl NimbusCoreChannel {
     pub async fn pressure_shift(&self, shift: i16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         shift.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 82, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 82, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  shift: {:?}", shift)];
+                format!(
+                    "in call to NimbusCoreChannel.PressureShift(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1656,10 +2258,17 @@ impl NimbusCoreChannel {
     pub async fn store_pressure_gain(&self, data_register: i16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         data_register.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 83, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 83, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  data_register: {:?}", data_register)];
+                format!(
+                    "in call to NimbusCoreChannel.StorePressureGain(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1669,10 +2278,17 @@ impl NimbusCoreChannel {
     pub async fn store_pressure_offset(&self, data_register: i16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         data_register.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 84, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 84, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  data_register: {:?}", data_register)];
+                format!(
+                    "in call to NimbusCoreChannel.StorePressureOffset(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1698,10 +2314,25 @@ impl NimbusCoreChannel {
         collet_check.serialize(&mut args);
         time.serialize(&mut args);
         test_type.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 85, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 85, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_start_position: {:?}", z_start_position),
+                    format!("  z_stop_position: {:?}", z_stop_position),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  tip_volume: {:?}", tip_volume),
+                    format!("  collet_check: {:?}", collet_check),
+                    format!("  time: {:?}", time),
+                    format!("  test_type: {:?}", test_type),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.LeakCheck(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1711,10 +2342,17 @@ impl NimbusCoreChannel {
     pub async fn get_configuration(&self, index: i16) -> Result<GetConfigurationReply, Error> {
         let mut args = BytesMut::new();
         index.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 86, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 86, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  index: {:?}", index)];
+                format!(
+                    "in call to NimbusCoreChannel.GetConfiguration(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1726,10 +2364,20 @@ impl NimbusCoreChannel {
         let mut args = BytesMut::new();
         index.serialize(&mut args);
         enable.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 87, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 87, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  index: {:?}", index),
+                    format!("  enable: {:?}", enable),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.SetConfiguration(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1738,10 +2386,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_potentiometer_data(&self) -> Result<GetPotentiometerDataReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 88, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 88, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetPotentiometerData()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -1752,10 +2401,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_pressure_sensor_ad(&self) -> Result<GetPressureSensorADReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 89, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 89, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetPressureSensorAD()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -1766,10 +2416,11 @@ impl NimbusCoreChannel {
 
     pub async fn calibrate_tadm_offset(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 90, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 90, args.freeze()).await,
+            || "in call to NimbusCoreChannel.CalibrateTadmOffset()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1801,10 +2452,28 @@ impl NimbusCoreChannel {
         limit_curve_index.serialize(&mut args);
         recording_mode.serialize(&mut args);
         measurement_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 91, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 91, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  volume: {:?}", volume),
+                    format!("  stop_back_volume: {:?}", stop_back_volume),
+                    format!("  transport_air_volume: {:?}", transport_air_volume),
+                    format!("  dispense_speed: {:?}", dispense_speed),
+                    format!("  cutoff_speed: {:?}", cutoff_speed),
+                    format!("  dispense_pattern: {:?}", dispense_pattern),
+                    format!("  tadm_enabled: {:?}", tadm_enabled),
+                    format!("  limit_curve_index: {:?}", limit_curve_index),
+                    format!("  recording_mode: {:?}", recording_mode),
+                    format!("  measurement_id: {:?}", measurement_id),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.PrepareOnTheFlyDispense(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1813,10 +2482,11 @@ impl NimbusCoreChannel {
 
     pub async fn start_on_the_fly_dispense(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 92, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 92, args.freeze()).await,
+            || "in call to NimbusCoreChannel.StartOnTheFlyDispense()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1825,10 +2495,11 @@ impl NimbusCoreChannel {
 
     pub async fn stop_on_the_fly_dispense(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 93, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 93, args.freeze()).await,
+            || "in call to NimbusCoreChannel.StopOnTheFlyDispense()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1839,10 +2510,11 @@ impl NimbusCoreChannel {
         &self,
     ) -> Result<ReadOnTheFlyDispenseErrorsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 94, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 94, args.freeze()).await,
+            || "in call to NimbusCoreChannel.ReadOnTheFlyDispenseErrors()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1854,10 +2526,20 @@ impl NimbusCoreChannel {
         let mut args = BytesMut::new();
         volume.serialize(&mut args);
         aspirate_speed.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 95, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 95, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  volume: {:?}", volume),
+                    format!("  aspirate_speed: {:?}", aspirate_speed),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.DispenserAspirate(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1877,10 +2559,22 @@ impl NimbusCoreChannel {
         stop_back_volume.serialize(&mut args);
         dispense_speed.serialize(&mut args);
         cutoff_speed.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 96, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 96, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  volume: {:?}", volume),
+                    format!("  stop_back_volume: {:?}", stop_back_volume),
+                    format!("  dispense_speed: {:?}", dispense_speed),
+                    format!("  cutoff_speed: {:?}", cutoff_speed),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.DispenserDispense(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1889,10 +2583,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_current_dispenser_volume(&self) -> Result</* volume= */ u32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 97, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 97, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetCurrentDispenserVolume()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1902,10 +2597,11 @@ impl NimbusCoreChannel {
 
     pub async fn get_liquid_height(&self) -> Result</* liquid_height= */ i32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 98, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 98, args.freeze()).await,
+            || "in call to NimbusCoreChannel.GetLiquidHeight()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -1926,10 +2622,22 @@ impl NimbusCoreChannel {
         z_min_position.serialize(&mut args);
         z_final_position.serialize(&mut args);
         z_velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 99, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 99, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  z_position: {:?}", z_position),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  z_final_position: {:?}", z_final_position),
+                    format!("  z_velocity: {:?}", z_velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.ZSeekObstaclePosition(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -1958,10 +2666,26 @@ impl NimbusCoreChannel {
         z_velocity.serialize(&mut args);
         capacitive_lld_steepness.serialize(&mut args);
         capacitive_lld_offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 100, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 100, args.freeze())
+                .await,
+            || {
+                let parameters = vec![
+                    format!("  z_position: {:?}", z_position),
+                    format!("  z_min_position: {:?}", z_min_position),
+                    format!("  z_final_position: {:?}", z_final_position),
+                    format!("  z_velocity: {:?}", z_velocity),
+                    format!("  capacitive_lld_steepness: {:?}", capacitive_lld_steepness),
+                    format!("  capacitive_lld_offset: {:?}", capacitive_lld_offset),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.ZSeekLldPosition(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -1975,10 +2699,13 @@ impl NimbusCoreChannel {
 
     pub async fn calibrate_squeeze_check_torque(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 101, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 101, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.CalibrateSqueezeCheckTorque()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -1987,10 +2714,13 @@ impl NimbusCoreChannel {
 
     pub async fn calibrate_squeeze_position(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 102, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 102, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.CalibrateSqueezePosition()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -2000,10 +2730,19 @@ impl NimbusCoreChannel {
     pub async fn set_z_liquid_seek_speed(&self, velocity: u32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 103, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 103, args.freeze())
+                .await,
+            || {
+                let parameters = vec![format!("  velocity: {:?}", velocity)];
+                format!(
+                    "in call to NimbusCoreChannel.SetZLiquidSeekSpeed(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -2012,10 +2751,13 @@ impl NimbusCoreChannel {
 
     pub async fn get_z_liquid_seek_speed(&self) -> Result</* velocity= */ u32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 104, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 0, 104, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.GetZLiquidSeekSpeed()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -2036,10 +2778,24 @@ impl NimbusCoreChannel {
         speed_switching_position.serialize(&mut args);
         velocity.serialize(&mut args);
         lower_section_velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 105, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 105, args.freeze())
+                .await,
+            || {
+                let parameters = vec![
+                    format!("  position: {:?}", position),
+                    format!("  speed_switching_position: {:?}", speed_switching_position),
+                    format!("  velocity: {:?}", velocity),
+                    format!("  lower_section_velocity: {:?}", lower_section_velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.ZMoveAbsolute2Speed(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -2048,10 +2804,13 @@ impl NimbusCoreChannel {
 
     pub async fn z_servo_off(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 106, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 106, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.ZServoOff()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -2060,10 +2819,13 @@ impl NimbusCoreChannel {
 
     pub async fn y_servo_off(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 107, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 107, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.YServoOff()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -2072,10 +2834,13 @@ impl NimbusCoreChannel {
 
     pub async fn save_counters(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 108, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 108, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.SaveCounters()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -2084,10 +2849,13 @@ impl NimbusCoreChannel {
 
     pub async fn get_calibration_values(&self) -> Result<GetCalibrationValuesReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 109, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 0, 109, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.GetCalibrationValues()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -2107,10 +2875,13 @@ impl NimbusCoreChannel {
         &self,
     ) -> Result<GetExtendedCalibrationValuesReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 110, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 0, 110, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.GetExtendedCalibrationValues()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -2128,10 +2899,13 @@ impl NimbusCoreChannel {
 
     pub async fn get_counters(&self) -> Result<GetCountersReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 111, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 0, 111, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.GetCounters()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -2149,10 +2923,13 @@ impl NimbusCoreChannel {
 
     pub async fn get_technical_info(&self) -> Result</* channel_info= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 112, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 0, 112, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.GetTechnicalInfo()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -2173,10 +2950,24 @@ impl NimbusCoreChannel {
         tip_eject_counter.serialize(&mut args);
         aspirate_counter.serialize(&mut args);
         dispense_counter.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 113, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 113, args.freeze())
+                .await,
+            || {
+                let parameters = vec![
+                    format!("  tip_pickup_counter: {:?}", tip_pickup_counter),
+                    format!("  tip_eject_counter: {:?}", tip_eject_counter),
+                    format!("  aspirate_counter: {:?}", aspirate_counter),
+                    format!("  dispense_counter: {:?}", dispense_counter),
+                ];
+                format!(
+                    "in call to NimbusCoreChannel.SetCounters(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -2190,10 +2981,19 @@ impl NimbusCoreChannel {
     ) -> Result</* detects_per_minute= */ u16, Error> {
         let mut args = BytesMut::new();
         seconds.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 114, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 114, args.freeze())
+                .await,
+            || {
+                let parameters = vec![format!("  seconds: {:?}", seconds)];
+                format!(
+                    "in call to NimbusCoreChannel.MeasureLldFrequency(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -2203,10 +3003,13 @@ impl NimbusCoreChannel {
 
     pub async fn get_positions(&self) -> Result<GetPositionsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 115, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 0, 115, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.GetPositions()".to_string(),
+        )?;
+
         if count != 8 {
             return Err(ConnectionError(anyhow!("Expected 8 values, not {}", count)));
         }
@@ -2232,10 +3035,13 @@ impl NimbusCoreChannel {
 
     pub async fn reset(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 116, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot
+                .act(&self.address, 1, 3, 116, args.freeze())
+                .await,
+            || "in call to NimbusCoreChannel.Reset()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -2244,10 +3050,11 @@ impl NimbusCoreChannel {
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreChannel.ObjectInfo()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -2266,10 +3073,17 @@ impl NimbusCoreChannel {
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  method: {:?}", method)];
+                format!(
+                    "in call to NimbusCoreChannel.MethodInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 6 {
             return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
@@ -2292,10 +3106,17 @@ impl NimbusCoreChannel {
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  subobject: {:?}", subobject)];
+                format!(
+                    "in call to NimbusCoreChannel.SubObjectInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 3 {
             return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
@@ -2311,10 +3132,11 @@ impl NimbusCoreChannel {
 
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreChannel.InterfaceDescriptors()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -2329,10 +3151,17 @@ impl NimbusCoreChannel {
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreChannel.EnumInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -2351,10 +3180,17 @@ impl NimbusCoreChannel {
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreChannel.StructInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -2615,21 +3451,25 @@ impl PigletCodec for MVec<Vec<ConfigurationIndexes>> {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct CreateLimitCurveReply {
     index: u32,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct RetrieveTadmDataReply {
     tadm_data: Vec<i16>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetLimitCurveNamesReply {
     names: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetLimitCurveInfoReply {
     index: u32,
@@ -2637,40 +3477,47 @@ pub struct GetLimitCurveInfoReply {
     upper_limits: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetConfigurationReply {
     enabled: bool,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetPotentiometerDataReply {
     gain: i16,
     offset: i16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetPressureSensorADReply {
     pressure_lld: i16,
     tadm: i16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ReadOnTheFlyDispenseErrorsReply {
     status: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ZSeekObstaclePositionReply {
     position: i32,
     obstacle_detected: bool,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ZSeekLldPositionReply {
     position: i32,
     lld_detected: bool,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetCalibrationValuesReply {
     dispense_drive: i16,
@@ -2679,6 +3526,7 @@ pub struct GetCalibrationValuesReply {
     clot_detection: i16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetExtendedCalibrationValuesReply {
     tip_type_adjustment: i16,
@@ -2687,6 +3535,7 @@ pub struct GetExtendedCalibrationValuesReply {
     z_bottom_search: i16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetCountersReply {
     tip_pickup_counter: u32,
@@ -2695,6 +3544,7 @@ pub struct GetCountersReply {
     dispense_counter: u32,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetPositionsReply {
     y_position: i32,
@@ -2707,6 +3557,7 @@ pub struct GetPositionsReply {
     s_encoder_position: i32,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
     name: String,
@@ -2715,6 +3566,7 @@ pub struct ObjectInfoReply {
     subobjects: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
@@ -2725,6 +3577,7 @@ pub struct MethodInfoReply {
     parameternames: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
@@ -2732,12 +3585,14 @@ pub struct SubObjectInfoReply {
     object_id: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
@@ -2746,6 +3601,7 @@ pub struct EnumInfoReply {
     enumeration_value_descriptions: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
     struct_names: Vec<String>,

@@ -6,7 +6,7 @@ use crate::traits::MVec;
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
-    client::{Error, Error::ConnectionError, RobotClient},
+    client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
     values::{NetworkResult, PigletCodec},
 };
@@ -33,10 +33,11 @@ impl NimbusCoreBarcodeScanner0Illumination {
 
     pub async fn get_enable(&self) -> Result</* enabled= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreBarcodeScanner0Illumination.GetEnable()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -47,10 +48,17 @@ impl NimbusCoreBarcodeScanner0Illumination {
     pub async fn set_enable(&self, enabled: bool) -> Result<(), Error> {
         let mut args = BytesMut::new();
         enabled.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  enabled: {:?}", enabled)];
+                format!(
+                    "in call to NimbusCoreBarcodeScanner0Illumination.SetEnable(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -60,10 +68,17 @@ impl NimbusCoreBarcodeScanner0Illumination {
     pub async fn get_intensity(&self, channel: u16) -> Result</* intensity_percent= */ u16, Error> {
         let mut args = BytesMut::new();
         channel.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  channel: {:?}", channel)];
+                format!(
+                    "in call to NimbusCoreBarcodeScanner0Illumination.GetIntensity(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -75,10 +90,20 @@ impl NimbusCoreBarcodeScanner0Illumination {
         let mut args = BytesMut::new();
         channel.serialize(&mut args);
         intensity_percent.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 4, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  channel: {:?}", channel),
+                    format!("  intensity_percent: {:?}", intensity_percent),
+                ];
+                format!(
+                    "in call to NimbusCoreBarcodeScanner0Illumination.SetIntensity(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -87,10 +112,11 @@ impl NimbusCoreBarcodeScanner0Illumination {
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreBarcodeScanner0Illumination.ObjectInfo()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -109,10 +135,17 @@ impl NimbusCoreBarcodeScanner0Illumination {
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  method: {:?}", method)];
+                format!(
+                    "in call to NimbusCoreBarcodeScanner0Illumination.MethodInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 6 {
             return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
@@ -135,10 +168,17 @@ impl NimbusCoreBarcodeScanner0Illumination {
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  subobject: {:?}", subobject)];
+                format!(
+                    "in call to NimbusCoreBarcodeScanner0Illumination.SubObjectInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 3 {
             return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
@@ -154,10 +194,14 @@ impl NimbusCoreBarcodeScanner0Illumination {
 
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 4, args.freeze()).await,
+            || {
+                "in call to NimbusCoreBarcodeScanner0Illumination.InterfaceDescriptors()"
+                    .to_string()
+            },
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -172,10 +216,17 @@ impl NimbusCoreBarcodeScanner0Illumination {
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreBarcodeScanner0Illumination.EnumInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -194,10 +245,17 @@ impl NimbusCoreBarcodeScanner0Illumination {
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreBarcodeScanner0Illumination.StructInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -214,6 +272,7 @@ impl NimbusCoreBarcodeScanner0Illumination {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
     name: String,
@@ -222,6 +281,7 @@ pub struct ObjectInfoReply {
     subobjects: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
@@ -232,6 +292,7 @@ pub struct MethodInfoReply {
     parameternames: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
@@ -239,12 +300,14 @@ pub struct SubObjectInfoReply {
     object_id: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
@@ -253,6 +316,7 @@ pub struct EnumInfoReply {
     enumeration_value_descriptions: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
     struct_names: Vec<String>,

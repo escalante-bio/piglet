@@ -6,7 +6,7 @@ use crate::traits::MVec;
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
-    client::{Error, Error::ConnectionError, RobotClient},
+    client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
     values::{NetworkResult, PigletCodec},
 };
@@ -34,10 +34,17 @@ impl NimbusCoreEthernet {
     pub async fn set_dhcp_enable(&self, enable_dhcp: bool) -> Result<(), Error> {
         let mut args = BytesMut::new();
         enable_dhcp.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 1, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  enable_dhcp: {:?}", enable_dhcp)];
+                format!(
+                    "in call to NimbusCoreEthernet.SetDhcpEnable(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -46,10 +53,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_dhcp_enable(&self) -> Result</* use_dhcp= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 2, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetDhcpEnable()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -60,10 +68,17 @@ impl NimbusCoreEthernet {
     pub async fn set_host_name(&self, host_name: String) -> Result<(), Error> {
         let mut args = BytesMut::new();
         host_name.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  host_name: {:?}", host_name)];
+                format!(
+                    "in call to NimbusCoreEthernet.SetHostName(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -72,10 +87,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_host_name(&self) -> Result</* host_name= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetHostName()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -85,10 +101,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_current_host_name(&self) -> Result</* host_name= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 5, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetCurrentHostName()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -98,10 +115,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_default_host_name(&self) -> Result</* host_name= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 6, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetDefaultHostName()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -118,10 +136,20 @@ impl NimbusCoreEthernet {
         let mut args = BytesMut::new();
         ip_address.serialize(&mut args);
         subnet_mask.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 7, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 7, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  ip_address: {:?}", ip_address),
+                    format!("  subnet_mask: {:?}", subnet_mask),
+                ];
+                format!(
+                    "in call to NimbusCoreEthernet.SetStaticIpAddress(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -130,10 +158,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_static_ip_address(&self) -> Result<GetStaticIpAddressReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 8, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 8, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetStaticIpAddress()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -147,10 +176,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_current_ip_address(&self) -> Result<GetCurrentIpAddressReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 9, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 9, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetCurrentIpAddress()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -164,10 +194,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_mac_address(&self) -> Result</* mac_address= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 10, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 10, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetMacAddress()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -178,10 +209,17 @@ impl NimbusCoreEthernet {
     pub async fn set_dhcp_timeout(&self, dhcp_timeout: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         dhcp_timeout.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 11, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 11, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  dhcp_timeout: {:?}", dhcp_timeout)];
+                format!(
+                    "in call to NimbusCoreEthernet.SetDhcpTimeout(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -190,10 +228,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_dhcp_timeout(&self) -> Result</* dhcp_timeout= */ i32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 12, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 12, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetDhcpTimeout()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -204,10 +243,17 @@ impl NimbusCoreEthernet {
     pub async fn set_location(&self, location: String) -> Result<(), Error> {
         let mut args = BytesMut::new();
         location.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 13, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 13, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  location: {:?}", location)];
+                format!(
+                    "in call to NimbusCoreEthernet.SetLocation(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -216,10 +262,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_location(&self) -> Result</* location= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 14, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 14, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetLocation()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -230,10 +277,17 @@ impl NimbusCoreEthernet {
     pub async fn set_comment(&self, comment: String) -> Result<(), Error> {
         let mut args = BytesMut::new();
         comment.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 15, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 15, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  comment: {:?}", comment)];
+                format!(
+                    "in call to NimbusCoreEthernet.SetComment(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -242,10 +296,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_comment(&self) -> Result</* comment= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 16, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 16, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetComment()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -256,10 +311,17 @@ impl NimbusCoreEthernet {
     pub async fn set_instrument_id(&self, instrument_id: String) -> Result<(), Error> {
         let mut args = BytesMut::new();
         instrument_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 17, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 17, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  instrument_id: {:?}", instrument_id)];
+                format!(
+                    "in call to NimbusCoreEthernet.SetInstrumentID(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -268,10 +330,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_instrument_id(&self) -> Result</* instrument_id= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 18, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 18, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetInstrumentID()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -281,10 +344,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_instrument_type(&self) -> Result</* instrument_type= */ String, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 19, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 19, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetInstrumentType()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -294,10 +358,11 @@ impl NimbusCoreEthernet {
 
     pub async fn save_settings(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 20, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 20, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.SaveSettings()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -306,10 +371,11 @@ impl NimbusCoreEthernet {
 
     pub async fn recall_settings(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 21, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 21, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.RecallSettings()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -318,10 +384,11 @@ impl NimbusCoreEthernet {
 
     pub async fn invalidate_settings(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 22, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 22, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.InvalidateSettings()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -330,10 +397,11 @@ impl NimbusCoreEthernet {
 
     pub async fn are_stored_settings_valid(&self) -> Result</* valid= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 23, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 23, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.AreStoredSettingsValid()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -343,10 +411,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_tcp_port(&self) -> Result</* port= */ u16, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 24, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 24, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetTCPPort()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -357,10 +426,17 @@ impl NimbusCoreEthernet {
     pub async fn set_tcp_port(&self, port: u16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         port.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 25, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 25, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  port: {:?}", port)];
+                format!(
+                    "in call to NimbusCoreEthernet.SetTCPPort(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -369,10 +445,11 @@ impl NimbusCoreEthernet {
 
     pub async fn get_udp_port(&self) -> Result</* port= */ u16, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 26, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 26, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.GetUDPPort()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -383,10 +460,17 @@ impl NimbusCoreEthernet {
     pub async fn set_udp_port(&self, port: u16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         port.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 27, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 27, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  port: {:?}", port)];
+                format!(
+                    "in call to NimbusCoreEthernet.SetUDPPort(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -395,10 +479,11 @@ impl NimbusCoreEthernet {
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.ObjectInfo()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -417,10 +502,17 @@ impl NimbusCoreEthernet {
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  method: {:?}", method)];
+                format!(
+                    "in call to NimbusCoreEthernet.MethodInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 6 {
             return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
@@ -443,10 +535,17 @@ impl NimbusCoreEthernet {
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  subobject: {:?}", subobject)];
+                format!(
+                    "in call to NimbusCoreEthernet.SubObjectInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 3 {
             return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
@@ -462,10 +561,11 @@ impl NimbusCoreEthernet {
 
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreEthernet.InterfaceDescriptors()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -480,10 +580,17 @@ impl NimbusCoreEthernet {
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreEthernet.EnumInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -502,10 +609,17 @@ impl NimbusCoreEthernet {
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreEthernet.StructInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -522,18 +636,21 @@ impl NimbusCoreEthernet {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetStaticIpAddressReply {
     ip_address: String,
     subnet_mask: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetCurrentIpAddressReply {
     ip_address: String,
     subnet_mask: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
     name: String,
@@ -542,6 +659,7 @@ pub struct ObjectInfoReply {
     subobjects: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
@@ -552,6 +670,7 @@ pub struct MethodInfoReply {
     parameternames: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
@@ -559,12 +678,14 @@ pub struct SubObjectInfoReply {
     object_id: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
@@ -573,6 +694,7 @@ pub struct EnumInfoReply {
     enumeration_value_descriptions: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
     struct_names: Vec<String>,

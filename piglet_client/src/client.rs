@@ -2,7 +2,7 @@ use crate::client::Error::{CallError, ConnectionError};
 use crate::connection::{Connection, ConnectionDetails, connect};
 use crate::object_address::ObjectAddress;
 use crate::values::{ErrorCode, PigletCodec};
-use anyhow::{Context, anyhow, bail};
+use anyhow::{anyhow, bail};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -107,8 +107,9 @@ impl RobotClient {
                 vec![parse_robot_error(&message).map_err(|e| ConnectionError(e))?]
             };
             Err(CallError {
-                source: destination.clone(),
+                context: None,
                 errors,
+                source: destination.clone(),
             })
         }
     }
@@ -169,8 +170,32 @@ impl RobotClient {
     }
 }
 
+pub fn with_context<V, C: FnOnce() -> String>(
+    result: Result<V, Error>,
+    context_generator: C,
+) -> Result<V, Error> {
+    result.map_err(|err| {
+        let ctx = context_generator();
+        match err {
+            CallError {
+                context,
+                errors,
+                source,
+            } => CallError {
+                context: Some(match context {
+                    Some(original) => format!("{}\n\ncaused by: {}", ctx, original),
+                    None => ctx,
+                }),
+                errors,
+                source,
+            },
+            ConnectionError(e) => ConnectionError(e.context(ctx)),
+        }
+    })
+}
+
 #[derive(Clone, Debug)]
-struct RobotError {
+pub struct RobotError {
     code: ErrorCode,
     source: ObjectAddress,
 }
@@ -188,8 +213,9 @@ impl std::fmt::Display for RobotError {
 #[derive(Debug)]
 pub enum Error {
     CallError {
-        source: ObjectAddress,
+        context: Option<String>,
         errors: Vec<RobotError>,
+        source: ObjectAddress,
     },
     ConnectionError(anyhow::Error),
 }
@@ -206,16 +232,23 @@ impl std::error::Error for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
-            CallError { source, errors } => {
+            CallError {
+                context,
+                errors,
+                source,
+            } => {
                 if errors.len() == 1 {
-                    write!(f, "{}", errors.get(0).unwrap())
+                    write!(f, "{}", errors.get(0).unwrap())?;
                 } else {
-                    write!(f, "Call to {} failed with multiple errors:\n", source);
+                    write!(f, "Call to {} failed with multiple errors:", source)?;
                     for error in errors {
-                        write!(f, " - {}\n", error);
+                        write!(f, "\n - {}", error)?;
                     }
-                    Ok(())
                 }
+                if let Some(c) = context {
+                    write!(f, "\n\ncontext: {}", c)?;
+                }
+                Ok(())
             }
             ConnectionError(e) => write!(f, "{}", e.to_string()),
         }

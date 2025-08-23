@@ -956,19 +956,58 @@ pub struct {}Reply {{
         contents.push("    let mut args = BytesMut::new();".to_string());
         for argument in &arguments {
             let source = if argument.wrap_in_mvec {
-                format!("MVec({})", argument.name)
+                // TODO(april): this sucks but I think I need to split PigletCodec if I don't want
+                // to do this.
+                format!("MVec({}.clone())", argument.name)
             } else {
                 argument.name.clone()
             };
             contents.push(format!("    {}.serialize(&mut args);", source));
         }
-        contents.push(
-            format!(
-                "    let (count, mut stream) = self.robot.act(&self.address, {}, {}, {}, args.freeze()).await?;",
-                method.interface_id,
-                method.call_type,
-                method.method_id,
+        contents.push(format!(
+            r#" let (count, mut stream) =
+        with_context(
+            self.robot.act(&self.address, {}, {}, {}, args.freeze()).await,
+            || {{
+"#,
+            method.interface_id, method.call_type, method.method_id,
+        ));
+        if arguments.len() > 0 {
+            contents.push(
+                r#"
+                let parameters = vec![
+"#
+                .to_string(),
+            );
+            for argument in &arguments {
+                contents.push(format!(
+                    r#"
+                        format!("  {}: {{:?}}", {}),
+    "#,
+                    argument.name, argument.name,
+                ));
+            }
+            contents.push(format!(
+                r#"
+                    ];
+                    format!("in call to {}.{}(\n{{}}\n)", parameters.join("\n"))"#,
+                name, method.name,
             ));
+        } else {
+            contents.push(format!(
+                r#"
+                    "in call to {}.{}()".to_string()"#,
+                name, method.name,
+            ));
+        }
+        contents.push(
+            r#"
+                },
+            )?;
+"#
+            .to_string(),
+        );
+
         let expected_length = return_elements.len() + return_values.len();
         contents.push(format!("    if count != {} {{", expected_length));
         contents.push(format!(
@@ -1050,7 +1089,7 @@ use anyhow::anyhow;
 use bytes::{{Buf, BufMut, Bytes, BytesMut}};
 use crate::traits::MVec;
 use piglet_client::{{
-  client::{{Error, Error::ConnectionError, RobotClient}},
+  client::{{Error, Error::ConnectionError, RobotClient, with_context}},
   object_address::ObjectAddress,
   values::{{PigletCodec, NetworkResult}},
 }};

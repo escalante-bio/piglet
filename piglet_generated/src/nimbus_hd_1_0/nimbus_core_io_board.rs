@@ -6,7 +6,7 @@ use crate::traits::MVec;
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
-    client::{Error, Error::ConnectionError, RobotClient},
+    client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
     values::{NetworkResult, PigletCodec},
 };
@@ -34,10 +34,17 @@ impl NimbusCoreIoBoard {
     pub async fn get_ttl_input(&self, dw_input: u32) -> Result</* lpb_state= */ bool, Error> {
         let mut args = BytesMut::new();
         dw_input.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 1, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  dw_input: {:?}", dw_input)];
+                format!(
+                    "in call to NimbusCoreIoBoard.GetTTLInput(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -47,10 +54,11 @@ impl NimbusCoreIoBoard {
 
     pub async fn get_ttl_inputs(&self) -> Result</* lpdw_mask= */ u32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 2, args.freeze()).await,
+            || "in call to NimbusCoreIoBoard.GetTTLInputs()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -61,10 +69,17 @@ impl NimbusCoreIoBoard {
     pub async fn get_ttl_output(&self, dw_output: u32) -> Result</* lpb_state= */ bool, Error> {
         let mut args = BytesMut::new();
         dw_output.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  dw_output: {:?}", dw_output)];
+                format!(
+                    "in call to NimbusCoreIoBoard.GetTTLOutput(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -74,10 +89,11 @@ impl NimbusCoreIoBoard {
 
     pub async fn get_ttl_outputs(&self) -> Result</* lpdw_mask= */ u32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreIoBoard.GetTTLOutputs()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -89,10 +105,20 @@ impl NimbusCoreIoBoard {
         let mut args = BytesMut::new();
         dw_output.serialize(&mut args);
         b_state.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  dw_output: {:?}", dw_output),
+                    format!("  b_state: {:?}", b_state),
+                ];
+                format!(
+                    "in call to NimbusCoreIoBoard.SetTTLOutput(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -102,10 +128,17 @@ impl NimbusCoreIoBoard {
     pub async fn set_ttl_outputs(&self, dw_mask: u32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         dw_mask.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  dw_mask: {:?}", dw_mask)];
+                format!(
+                    "in call to NimbusCoreIoBoard.SetTTLOutputs(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -119,10 +152,17 @@ impl NimbusCoreIoBoard {
     ) -> Result</* lpb_state= */ bool, Error> {
         let mut args = BytesMut::new();
         dw_output.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 7, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 7, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  dw_output: {:?}", dw_output)];
+                format!(
+                    "in call to NimbusCoreIoBoard.GetOpenDrainOutput(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -132,10 +172,11 @@ impl NimbusCoreIoBoard {
 
     pub async fn get_open_drain_outputs(&self) -> Result</* lpdw_mask= */ u32, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 8, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 8, args.freeze()).await,
+            || "in call to NimbusCoreIoBoard.GetOpenDrainOutputs()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -147,10 +188,20 @@ impl NimbusCoreIoBoard {
         let mut args = BytesMut::new();
         dw_output.serialize(&mut args);
         b_state.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 9, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 9, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  dw_output: {:?}", dw_output),
+                    format!("  b_state: {:?}", b_state),
+                ];
+                format!(
+                    "in call to NimbusCoreIoBoard.SetOpenDrainOutput(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -160,10 +211,17 @@ impl NimbusCoreIoBoard {
     pub async fn set_open_drain_outputs(&self, dw_mask: u32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         dw_mask.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 10, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 10, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  dw_mask: {:?}", dw_mask)];
+                format!(
+                    "in call to NimbusCoreIoBoard.SetOpenDrainOutputs(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -172,10 +230,11 @@ impl NimbusCoreIoBoard {
 
     pub async fn is_park_button_pressed(&self) -> Result</* lpb_pressed= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 11, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 11, args.freeze()).await,
+            || "in call to NimbusCoreIoBoard.IsParkButtonPressed()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -185,10 +244,11 @@ impl NimbusCoreIoBoard {
 
     pub async fn is_pause_button_pressed(&self) -> Result</* lpb_pressed= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 12, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 12, args.freeze()).await,
+            || "in call to NimbusCoreIoBoard.IsPauseButtonPressed()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -198,10 +258,11 @@ impl NimbusCoreIoBoard {
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreIoBoard.ObjectInfo()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -220,10 +281,17 @@ impl NimbusCoreIoBoard {
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  method: {:?}", method)];
+                format!(
+                    "in call to NimbusCoreIoBoard.MethodInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 6 {
             return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
@@ -246,10 +314,17 @@ impl NimbusCoreIoBoard {
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  subobject: {:?}", subobject)];
+                format!(
+                    "in call to NimbusCoreIoBoard.SubObjectInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 3 {
             return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
@@ -265,10 +340,11 @@ impl NimbusCoreIoBoard {
 
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreIoBoard.InterfaceDescriptors()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -283,10 +359,17 @@ impl NimbusCoreIoBoard {
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreIoBoard.EnumInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -305,10 +388,17 @@ impl NimbusCoreIoBoard {
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreIoBoard.StructInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -325,6 +415,7 @@ impl NimbusCoreIoBoard {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
     name: String,
@@ -333,6 +424,7 @@ pub struct ObjectInfoReply {
     subobjects: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
@@ -343,6 +435,7 @@ pub struct MethodInfoReply {
     parameternames: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
@@ -350,12 +443,14 @@ pub struct SubObjectInfoReply {
     object_id: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
@@ -364,6 +459,7 @@ pub struct EnumInfoReply {
     enumeration_value_descriptions: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
     struct_names: Vec<String>,

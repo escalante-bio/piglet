@@ -6,7 +6,7 @@ use crate::traits::MVec;
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
-    client::{Error, Error::ConnectionError, RobotClient},
+    client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
     values::{NetworkResult, PigletCodec},
 };
@@ -34,10 +34,17 @@ impl NimbusCoreXyCoord {
     pub async fn initialize_xy(&self, tips_used: Vec<u16>) -> Result<(), Error> {
         let mut args = BytesMut::new();
         tips_used.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 1, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  tips_used: {:?}", tips_used)];
+                format!(
+                    "in call to NimbusCoreXyCoord.InitializeXY(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -55,10 +62,21 @@ impl NimbusCoreXyCoord {
         tips_used.serialize(&mut args);
         x_position.serialize(&mut args);
         y_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 2, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  tips_used: {:?}", tips_used),
+                    format!("  x_position: {:?}", x_position),
+                    format!("  y_position: {:?}", y_position),
+                ];
+                format!(
+                    "in call to NimbusCoreXyCoord.MoveXYAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -80,10 +98,23 @@ impl NimbusCoreXyCoord {
         x_position.serialize(&mut args);
         x_acceleration.serialize(&mut args);
         y_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  tips_used: {:?}", tips_used),
+                    format!("  gripper_tips_used: {:?}", gripper_tips_used),
+                    format!("  x_position: {:?}", x_position),
+                    format!("  x_acceleration: {:?}", x_acceleration),
+                    format!("  y_position: {:?}", y_position),
+                ];
+                format!(
+                    "in call to NimbusCoreXyCoord.MoveXYAbsolutePlate(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -92,10 +123,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn initialize_x(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 4, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.InitializeX()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -105,10 +137,17 @@ impl NimbusCoreXyCoord {
     pub async fn move_x_absolute(&self, x_position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         x_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  x_position: {:?}", x_position)];
+                format!(
+                    "in call to NimbusCoreXyCoord.MoveXAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -118,10 +157,17 @@ impl NimbusCoreXyCoord {
     pub async fn move_x_relative_1(&self, x_distance: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         x_distance.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  x_distance: {:?}", x_distance)];
+                format!(
+                    "in call to NimbusCoreXyCoord.MoveXRelative_1(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -131,10 +177,17 @@ impl NimbusCoreXyCoord {
     pub async fn move_x_relative_2(&self, x_distance: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         x_distance.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  x_distance: {:?}", x_distance)];
+                format!(
+                    "in call to NimbusCoreXyCoord.MoveXRelative_2(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -152,10 +205,21 @@ impl NimbusCoreXyCoord {
         x_position.serialize(&mut args);
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 7, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 7, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_position: {:?}", x_position),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreXyCoord.MoveXAbsoluteSpeed(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -165,10 +229,17 @@ impl NimbusCoreXyCoord {
     pub async fn set_x_calibration(&self, x_offset: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         x_offset.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 8, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 8, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  x_offset: {:?}", x_offset)];
+                format!(
+                    "in call to NimbusCoreXyCoord.SetXCalibration(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -177,10 +248,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn get_x_calibration(&self) -> Result<GetXCalibrationReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 9, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 9, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.GetXCalibration()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -191,10 +263,17 @@ impl NimbusCoreXyCoord {
     pub async fn set_x_indication_enable(&self, enable: bool) -> Result<(), Error> {
         let mut args = BytesMut::new();
         enable.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 10, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 10, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  enable: {:?}", enable)];
+                format!(
+                    "in call to NimbusCoreXyCoord.SetXIndicationEnable(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -203,10 +282,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn get_x_indication_enable(&self) -> Result</* enable= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 11, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 11, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.GetXIndicationEnable()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -216,10 +296,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn is_x_initialized(&self) -> Result<IsXInitializedReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 12, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 12, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.IsXInitialized()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -229,10 +310,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn get_desired_position(&self) -> Result<GetDesiredPositionReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 13, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 13, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.GetDesiredPosition()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -246,10 +328,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn get_settling_parameters(&self) -> Result<GetSettlingParametersReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 14, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 14, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.GetSettlingParameters()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -262,10 +345,20 @@ impl NimbusCoreXyCoord {
         let mut args = BytesMut::new();
         time.serialize(&mut args);
         time_limit.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 15, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 15, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  time: {:?}", time),
+                    format!("  time_limit: {:?}", time_limit),
+                ];
+                format!(
+                    "in call to NimbusCoreXyCoord.SetSettlingParameters(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -287,10 +380,23 @@ impl NimbusCoreXyCoord {
         acceleration.serialize(&mut args);
         velocity.serialize(&mut args);
         times.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 16, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 16, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  tips_used: {:?}", tips_used),
+                    format!("  x_position: {:?}", x_position),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                    format!("  times: {:?}", times),
+                ];
+                format!(
+                    "in call to NimbusCoreXyCoord.OnTheFlyDispense(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -300,10 +406,17 @@ impl NimbusCoreXyCoord {
     pub async fn set_core_gripper_max_y_velocity(&self, y_velocity: u16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         y_velocity.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 17, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 17, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  y_velocity: {:?}", y_velocity)];
+                format!(
+                    "in call to NimbusCoreXyCoord.SetCoreGripperMaxYVelocity(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -312,10 +425,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn get_core_gripper_max_y_velocity(&self) -> Result</* y_velocity= */ u16, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 18, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 18, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.GetCoreGripperMaxYVelocity()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -332,10 +446,20 @@ impl NimbusCoreXyCoord {
         let mut args = BytesMut::new();
         tips_used.serialize(&mut args);
         y_distance.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 20, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 20, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  tips_used: {:?}", tips_used),
+                    format!("  y_distance: {:?}", y_distance),
+                ];
+                format!(
+                    "in call to NimbusCoreXyCoord.MoveYRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -345,10 +469,17 @@ impl NimbusCoreXyCoord {
     pub async fn set_x_velocity_scale(&self, scale: u16) -> Result<(), Error> {
         let mut args = BytesMut::new();
         scale.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 21, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 21, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  scale: {:?}", scale)];
+                format!(
+                    "in call to NimbusCoreXyCoord.SetXVelocityScale(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -357,10 +488,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn get_x_velocity_scale(&self) -> Result</* scale= */ u16, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 22, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 22, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.GetXVelocityScale()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -370,10 +502,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn unlock(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 23, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 23, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.Unlock()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -382,10 +515,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.ObjectInfo()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -404,10 +538,17 @@ impl NimbusCoreXyCoord {
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  method: {:?}", method)];
+                format!(
+                    "in call to NimbusCoreXyCoord.MethodInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 6 {
             return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
@@ -430,10 +571,17 @@ impl NimbusCoreXyCoord {
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  subobject: {:?}", subobject)];
+                format!(
+                    "in call to NimbusCoreXyCoord.SubObjectInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 3 {
             return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
@@ -449,10 +597,11 @@ impl NimbusCoreXyCoord {
 
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreXyCoord.InterfaceDescriptors()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -467,10 +616,17 @@ impl NimbusCoreXyCoord {
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreXyCoord.EnumInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -489,10 +645,17 @@ impl NimbusCoreXyCoord {
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreXyCoord.StructInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -509,28 +672,33 @@ impl NimbusCoreXyCoord {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetXCalibrationReply {
     x_offset: i32,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct IsXInitializedReply {
     initialized: bool,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetDesiredPositionReply {
     x_position: i32,
     y_position: Vec<i32>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetSettlingParametersReply {
     time: u16,
     time_limit: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
     name: String,
@@ -539,6 +707,7 @@ pub struct ObjectInfoReply {
     subobjects: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
@@ -549,6 +718,7 @@ pub struct MethodInfoReply {
     parameternames: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
@@ -556,12 +726,14 @@ pub struct SubObjectInfoReply {
     object_id: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
@@ -570,6 +742,7 @@ pub struct EnumInfoReply {
     enumeration_value_descriptions: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
     struct_names: Vec<String>,

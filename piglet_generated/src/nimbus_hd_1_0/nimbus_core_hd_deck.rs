@@ -6,7 +6,7 @@ use crate::traits::MVec;
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
-    client::{Error, Error::ConnectionError, RobotClient},
+    client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
     values::{NetworkResult, PigletCodec},
 };
@@ -33,10 +33,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn is_deck_monitoring_available(&self) -> Result</* monitoring= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.IsDeckMonitoringAvailable()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -46,10 +47,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn get_tracks(&self) -> Result</* track= */ u8, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 2, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.GetTracks()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -59,10 +61,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn get_track_sensor_states(&self) -> Result</* sensors= */ Vec<bool>, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 3, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.GetTrackSensorStates()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -72,10 +75,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn get_gantry_status(&self) -> Result</* status= */ GantryState, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.GetGantryStatus()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -90,10 +94,17 @@ impl NimbusCoreHdDeck {
     ) -> Result</* sensors= */ Vec<bool>, Error> {
         let mut args = BytesMut::new();
         configuring.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  configuring: {:?}", configuring)];
+                format!(
+                    "in call to NimbusCoreHdDeck.ConfigureTracks(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -112,10 +123,21 @@ impl NimbusCoreHdDeck {
         load.serialize(&mut args);
         track.serialize(&mut args);
         width.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  load: {:?}", load),
+                    format!("  track: {:?}", track),
+                    format!("  width: {:?}", width),
+                ];
+                format!(
+                    "in call to NimbusCoreHdDeck.LoadTracks(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -125,10 +147,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn cancel_track(&self) -> Result</* sensors= */ Vec<bool>, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 7, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 7, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.CancelTrack()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -138,10 +161,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn get_track_led_states(&self) -> Result</* leds= */ Vec<LedState>, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 8, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 8, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.GetTrackLedStates()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -151,11 +175,18 @@ impl NimbusCoreHdDeck {
 
     pub async fn configure_track_leds(&self, leds: Vec<LedConfiguration>) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        MVec(leds).serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 9, args.freeze())
-            .await?;
+        MVec(leds.clone()).serialize(&mut args);
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 9, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  leds: {:?}", leds)];
+                format!(
+                    "in call to NimbusCoreHdDeck.ConfigureTrackLeds(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -164,10 +195,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn is_deck_monitored(&self) -> Result</* monitoring= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 10, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 10, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.IsDeckMonitored()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -178,10 +210,17 @@ impl NimbusCoreHdDeck {
     pub async fn monitor_deck(&self, monitor: bool) -> Result<(), Error> {
         let mut args = BytesMut::new();
         monitor.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 11, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 11, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  monitor: {:?}", monitor)];
+                format!(
+                    "in call to NimbusCoreHdDeck.MonitorDeck(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -190,10 +229,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn have_deck_sensors_changed(&self) -> Result</* changed= */ bool, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 12, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 12, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.HaveDeckSensorsChanged()".to_string(),
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -212,10 +252,21 @@ impl NimbusCoreHdDeck {
         load.serialize(&mut args);
         tracks.serialize(&mut args);
         widths.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 13, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 13, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  load: {:?}", load),
+                    format!("  tracks: {:?}", tracks),
+                    format!("  widths: {:?}", widths),
+                ];
+                format!(
+                    "in call to NimbusCoreHdDeck.LoadTracks2(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -225,10 +276,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.ObjectInfo()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -247,10 +299,17 @@ impl NimbusCoreHdDeck {
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  method: {:?}", method)];
+                format!(
+                    "in call to NimbusCoreHdDeck.MethodInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 6 {
             return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
@@ -273,10 +332,17 @@ impl NimbusCoreHdDeck {
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  subobject: {:?}", subobject)];
+                format!(
+                    "in call to NimbusCoreHdDeck.SubObjectInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 3 {
             return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
@@ -292,10 +358,11 @@ impl NimbusCoreHdDeck {
 
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreHdDeck.InterfaceDescriptors()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -310,10 +377,17 @@ impl NimbusCoreHdDeck {
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreHdDeck.EnumInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -332,10 +406,17 @@ impl NimbusCoreHdDeck {
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreHdDeck.StructInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -757,6 +838,7 @@ impl PigletCodec for MVec<Vec<EventGantryState>> {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
     name: String,
@@ -765,6 +847,7 @@ pub struct ObjectInfoReply {
     subobjects: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
@@ -775,6 +858,7 @@ pub struct MethodInfoReply {
     parameternames: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
@@ -782,12 +866,14 @@ pub struct SubObjectInfoReply {
     object_id: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
@@ -796,6 +882,7 @@ pub struct EnumInfoReply {
     enumeration_value_descriptions: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
     struct_names: Vec<String>,

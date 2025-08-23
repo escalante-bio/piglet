@@ -6,7 +6,7 @@ use crate::traits::MVec;
 use anyhow::anyhow;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use piglet_client::{
-    client::{Error, Error::ConnectionError, RobotClient},
+    client::{Error, Error::ConnectionError, RobotClient, with_context},
     object_address::ObjectAddress,
     values::{NetworkResult, PigletCodec},
 };
@@ -33,10 +33,11 @@ impl NimbusCoreGripper {
 
     pub async fn initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 1, args.freeze()).await,
+            || "in call to NimbusCoreGripper.Initialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -45,10 +46,11 @@ impl NimbusCoreGripper {
 
     pub async fn initialize_smart(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 2, args.freeze()).await,
+            || "in call to NimbusCoreGripper.InitializeSmart()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -57,10 +59,11 @@ impl NimbusCoreGripper {
 
     pub async fn park(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
+            || "in call to NimbusCoreGripper.Park()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -88,10 +91,26 @@ impl NimbusCoreGripper {
         channel_traverse_height.serialize(&mut args);
         gripper_traverse_height.serialize(&mut args);
         final_z_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 4, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_position: {:?}", x_position),
+                    format!("  y_position: {:?}", y_position),
+                    format!("  z_position: {:?}", z_position),
+                    format!("  grip_angle: {:?}", grip_angle),
+                    format!("  plate_width: {:?}", plate_width),
+                    format!("  channel_traverse_height: {:?}", channel_traverse_height),
+                    format!("  gripper_traverse_height: {:?}", gripper_traverse_height),
+                    format!("  final_z_position: {:?}", final_z_position),
+                ];
+                format!(
+                    "in call to NimbusCoreGripper.PickUpPlate(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -119,10 +138,26 @@ impl NimbusCoreGripper {
         channel_traverse_height.serialize(&mut args);
         gripper_traverse_height.serialize(&mut args);
         final_z_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_position: {:?}", x_position),
+                    format!("  y_position: {:?}", y_position),
+                    format!("  z_position: {:?}", z_position),
+                    format!("  grip_angle: {:?}", grip_angle),
+                    format!("  plate_width: {:?}", plate_width),
+                    format!("  channel_traverse_height: {:?}", channel_traverse_height),
+                    format!("  gripper_traverse_height: {:?}", gripper_traverse_height),
+                    format!("  final_z_position: {:?}", final_z_position),
+                ];
+                format!(
+                    "in call to NimbusCoreGripper.DropPlate(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -154,10 +189,28 @@ impl NimbusCoreGripper {
         channel_traverse_height.serialize(&mut args);
         gripper_traverse_height.serialize(&mut args);
         final_z_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_position: {:?}", x_position),
+                    format!("  y_position: {:?}", y_position),
+                    format!("  z_position: {:?}", z_position),
+                    format!("  grip_angle: {:?}", grip_angle),
+                    format!("  plate_width: {:?}", plate_width),
+                    format!("  grip_open_distance: {:?}", grip_open_distance),
+                    format!("  force: {:?}", force),
+                    format!("  channel_traverse_height: {:?}", channel_traverse_height),
+                    format!("  gripper_traverse_height: {:?}", gripper_traverse_height),
+                    format!("  final_z_position: {:?}", final_z_position),
+                ];
+                format!(
+                    "in call to NimbusCoreGripper.PickUpPlateForce(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -187,10 +240,27 @@ impl NimbusCoreGripper {
         channel_traverse_height.serialize(&mut args);
         gripper_traverse_height.serialize(&mut args);
         final_z_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 7, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 7, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_position: {:?}", x_position),
+                    format!("  y_position: {:?}", y_position),
+                    format!("  z_position: {:?}", z_position),
+                    format!("  grip_angle: {:?}", grip_angle),
+                    format!("  plate_width: {:?}", plate_width),
+                    format!("  grip_open_distance: {:?}", grip_open_distance),
+                    format!("  channel_traverse_height: {:?}", channel_traverse_height),
+                    format!("  gripper_traverse_height: {:?}", gripper_traverse_height),
+                    format!("  final_z_position: {:?}", final_z_position),
+                ];
+                format!(
+                    "in call to NimbusCoreGripper.DropPlateForce(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -214,10 +284,24 @@ impl NimbusCoreGripper {
         wrist_angle.serialize(&mut args);
         channel_traverse_height.serialize(&mut args);
         gripper_traverse_height.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 8, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 8, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_position: {:?}", x_position),
+                    format!("  y_position: {:?}", y_position),
+                    format!("  z_position: {:?}", z_position),
+                    format!("  wrist_angle: {:?}", wrist_angle),
+                    format!("  channel_traverse_height: {:?}", channel_traverse_height),
+                    format!("  gripper_traverse_height: {:?}", gripper_traverse_height),
+                ];
+                format!(
+                    "in call to NimbusCoreGripper.MoveToPosition(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -241,10 +325,24 @@ impl NimbusCoreGripper {
         wrist_angle.serialize(&mut args);
         channel_traverse_height.serialize(&mut args);
         gripper_traverse_height.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 9, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 9, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_position: {:?}", x_position),
+                    format!("  y_position: {:?}", y_position),
+                    format!("  z_position: {:?}", z_position),
+                    format!("  wrist_angle: {:?}", wrist_angle),
+                    format!("  channel_traverse_height: {:?}", channel_traverse_height),
+                    format!("  gripper_traverse_height: {:?}", gripper_traverse_height),
+                ];
+                format!(
+                    "in call to NimbusCoreGripper.MoveToPositionZW(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -255,10 +353,20 @@ impl NimbusCoreGripper {
         let mut args = BytesMut::new();
         x_position.serialize(&mut args);
         y_position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 10, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 10, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_position: {:?}", x_position),
+                    format!("  y_position: {:?}", y_position),
+                ];
+                format!(
+                    "in call to NimbusCoreGripper.XYMoveAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -267,10 +375,11 @@ impl NimbusCoreGripper {
 
     pub async fn x_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 11, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 11, args.freeze()).await,
+            || "in call to NimbusCoreGripper.XInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -280,10 +389,17 @@ impl NimbusCoreGripper {
     pub async fn x_move_absolute(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 12, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 12, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.XMoveAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -293,10 +409,17 @@ impl NimbusCoreGripper {
     pub async fn x_move_relative(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 13, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 13, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.XMoveRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -305,10 +428,11 @@ impl NimbusCoreGripper {
 
     pub async fn y_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 14, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 14, args.freeze()).await,
+            || "in call to NimbusCoreGripper.YInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -318,10 +442,17 @@ impl NimbusCoreGripper {
     pub async fn y_move_absolute(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 15, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 15, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.YMoveAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -331,10 +462,17 @@ impl NimbusCoreGripper {
     pub async fn y_move_relative(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 16, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 16, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.YMoveRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -343,10 +481,11 @@ impl NimbusCoreGripper {
 
     pub async fn z_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 17, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 17, args.freeze()).await,
+            || "in call to NimbusCoreGripper.ZInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -356,10 +495,17 @@ impl NimbusCoreGripper {
     pub async fn z_move_absolute(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 18, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 18, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.ZMoveAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -369,10 +515,17 @@ impl NimbusCoreGripper {
     pub async fn z_move_relative(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 19, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 19, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.ZMoveRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -381,10 +534,11 @@ impl NimbusCoreGripper {
 
     pub async fn z_up(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 20, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 20, args.freeze()).await,
+            || "in call to NimbusCoreGripper.ZUp()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -393,10 +547,11 @@ impl NimbusCoreGripper {
 
     pub async fn w_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 21, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 21, args.freeze()).await,
+            || "in call to NimbusCoreGripper.WInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -406,10 +561,17 @@ impl NimbusCoreGripper {
     pub async fn w_move_absolute(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 22, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 22, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.WMoveAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -419,10 +581,17 @@ impl NimbusCoreGripper {
     pub async fn w_move_relative(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 23, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 23, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.WMoveRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -431,10 +600,11 @@ impl NimbusCoreGripper {
 
     pub async fn g_initialize(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 24, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 24, args.freeze()).await,
+            || "in call to NimbusCoreGripper.GInitialize()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -444,10 +614,17 @@ impl NimbusCoreGripper {
     pub async fn g_move_absolute(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 25, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 25, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.GMoveAbsolute(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -457,10 +634,17 @@ impl NimbusCoreGripper {
     pub async fn g_move_relative(&self, position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 26, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 26, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  position: {:?}", position)];
+                format!(
+                    "in call to NimbusCoreGripper.GMoveRelative(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -469,10 +653,11 @@ impl NimbusCoreGripper {
 
     pub async fn get_desired_position(&self) -> Result<GetDesiredPositionReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 0, 27, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 27, args.freeze()).await,
+            || "in call to NimbusCoreGripper.GetDesiredPosition()".to_string(),
+        )?;
+
         if count != 5 {
             return Err(ConnectionError(anyhow!("Expected 5 values, not {}", count)));
         }
@@ -493,10 +678,17 @@ impl NimbusCoreGripper {
     pub async fn initialize_zwy(&self, smart: bool) -> Result<(), Error> {
         let mut args = BytesMut::new();
         smart.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 28, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 28, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  smart: {:?}", smart)];
+                format!(
+                    "in call to NimbusCoreGripper.InitializeZWY(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -505,10 +697,11 @@ impl NimbusCoreGripper {
 
     pub async fn w_hold(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 29, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 29, args.freeze()).await,
+            || "in call to NimbusCoreGripper.WHold()".to_string(),
+        )?;
+
         if count != 0 {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
@@ -518,10 +711,17 @@ impl NimbusCoreGripper {
     pub async fn w_hold_2(&self, tips: bool) -> Result</* z_safe= */ bool, Error> {
         let mut args = BytesMut::new();
         tips.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 1, 3, 30, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 30, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  tips: {:?}", tips)];
+                format!(
+                    "in call to NimbusCoreGripper.WHold2(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 1 {
             return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
         }
@@ -531,10 +731,11 @@ impl NimbusCoreGripper {
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 1, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 1, args.freeze()).await,
+            || "in call to NimbusCoreGripper.ObjectInfo()".to_string(),
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -553,10 +754,17 @@ impl NimbusCoreGripper {
     pub async fn method_info(&self, method: u32) -> Result<MethodInfoReply, Error> {
         let mut args = BytesMut::new();
         method.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 2, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 2, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  method: {:?}", method)];
+                format!(
+                    "in call to NimbusCoreGripper.MethodInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 6 {
             return Err(ConnectionError(anyhow!("Expected 6 values, not {}", count)));
         }
@@ -579,10 +787,17 @@ impl NimbusCoreGripper {
     pub async fn sub_object_info(&self, subobject: u16) -> Result<SubObjectInfoReply, Error> {
         let mut args = BytesMut::new();
         subobject.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 3, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 3, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  subobject: {:?}", subobject)];
+                format!(
+                    "in call to NimbusCoreGripper.SubObjectInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 3 {
             return Err(ConnectionError(anyhow!("Expected 3 values, not {}", count)));
         }
@@ -598,10 +813,11 @@ impl NimbusCoreGripper {
 
     pub async fn interface_descriptors(&self) -> Result<InterfaceDescriptorsReply, Error> {
         let mut args = BytesMut::new();
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 4, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 4, args.freeze()).await,
+            || "in call to NimbusCoreGripper.InterfaceDescriptors()".to_string(),
+        )?;
+
         if count != 2 {
             return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
         }
@@ -616,10 +832,17 @@ impl NimbusCoreGripper {
     pub async fn enum_info(&self, interface_id: u8) -> Result<EnumInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 5, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 5, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreGripper.EnumInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -638,10 +861,17 @@ impl NimbusCoreGripper {
     pub async fn struct_info(&self, interface_id: u8) -> Result<StructInfoReply, Error> {
         let mut args = BytesMut::new();
         interface_id.serialize(&mut args);
-        let (count, mut stream) = self
-            .robot
-            .act(&self.address, 0, 0, 6, args.freeze())
-            .await?;
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 0, 0, 6, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  interface_id: {:?}", interface_id)];
+                format!(
+                    "in call to NimbusCoreGripper.StructInfo(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
         if count != 4 {
             return Err(ConnectionError(anyhow!("Expected 4 values, not {}", count)));
         }
@@ -658,6 +888,7 @@ impl NimbusCoreGripper {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetDesiredPositionReply {
     x_position: i32,
@@ -667,6 +898,7 @@ pub struct GetDesiredPositionReply {
     g_position: i32,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
     name: String,
@@ -675,6 +907,7 @@ pub struct ObjectInfoReply {
     subobjects: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
     interfaceid: u8,
@@ -685,6 +918,7 @@ pub struct MethodInfoReply {
     parameternames: String,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
     module_id: u16,
@@ -692,12 +926,14 @@ pub struct SubObjectInfoReply {
     object_id: u16,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
     interface_ids: Vec<u8>,
     interface_descriptors: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
     enumeration_names: Vec<String>,
@@ -706,6 +942,7 @@ pub struct EnumInfoReply {
     enumeration_value_descriptions: Vec<String>,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
     struct_names: Vec<String>,
