@@ -1515,7 +1515,7 @@ impl NimbusCorePipette {
         &self,
 
         channel: u16,
-        name: String,
+        name: &str,
         lower_limit_x: impl AsRef<[u16]>,
         lower_limit_y: impl AsRef<[i16]>,
         upper_limit_x: impl AsRef<[u16]>,
@@ -1628,7 +1628,7 @@ impl NimbusCorePipette {
         &self,
 
         channel: u16,
-        name: String,
+        name: &str,
     ) -> Result<GetLimitCurveInfoReply, Error> {
         let mut args = BytesMut::new();
         channel.serialize(&mut args);

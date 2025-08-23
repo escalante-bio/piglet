@@ -665,7 +665,7 @@ impl PigletDeserialize for MVec<{}> {{
                     rust_type: "u32".to_string(),
                 },
                 7 => Argument {
-                    rust_type: "String".to_string(),
+                    rust_type: "&str".to_string(),
                 },
                 8 => Argument {
                     rust_type: "impl AsRef<[u8]>".to_string(),

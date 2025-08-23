@@ -36,7 +36,7 @@ impl NimbusCoreBoanduzCan {
 
         address: i32,
         command_timeout: i32,
-        request: String,
+        request: &str,
     ) -> Result</* response= */ String, Error> {
         let mut args = BytesMut::new();
         address.serialize(&mut args);
@@ -64,7 +64,7 @@ impl NimbusCoreBoanduzCan {
         Ok(response)
     }
 
-    pub async fn send(&self, address: i32, request: String) -> Result<(), Error> {
+    pub async fn send(&self, address: i32, request: &str) -> Result<(), Error> {
         let mut args = BytesMut::new();
         address.serialize(&mut args);
         request.serialize(&mut args);

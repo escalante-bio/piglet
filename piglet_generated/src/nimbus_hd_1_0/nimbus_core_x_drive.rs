@@ -806,7 +806,7 @@ impl NimbusCoreXDrive {
         Ok(())
     }
 
-    pub async fn set_label(&self, label: String) -> Result<(), Error> {
+    pub async fn set_label(&self, label: &str) -> Result<(), Error> {
         let mut args = BytesMut::new();
         label.serialize(&mut args);
         let (count, mut stream) = with_context(

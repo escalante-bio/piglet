@@ -65,7 +65,7 @@ impl NimbusCoreEthernet {
         Ok(use_dhcp)
     }
 
-    pub async fn set_host_name(&self, host_name: String) -> Result<(), Error> {
+    pub async fn set_host_name(&self, host_name: &str) -> Result<(), Error> {
         let mut args = BytesMut::new();
         host_name.serialize(&mut args);
         let (count, mut stream) = with_context(
@@ -130,8 +130,8 @@ impl NimbusCoreEthernet {
     pub async fn set_static_ip_address(
         &self,
 
-        ip_address: String,
-        subnet_mask: String,
+        ip_address: &str,
+        subnet_mask: &str,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         ip_address.serialize(&mut args);
@@ -240,7 +240,7 @@ impl NimbusCoreEthernet {
         Ok(dhcp_timeout)
     }
 
-    pub async fn set_location(&self, location: String) -> Result<(), Error> {
+    pub async fn set_location(&self, location: &str) -> Result<(), Error> {
         let mut args = BytesMut::new();
         location.serialize(&mut args);
         let (count, mut stream) = with_context(
@@ -274,7 +274,7 @@ impl NimbusCoreEthernet {
         Ok(location)
     }
 
-    pub async fn set_comment(&self, comment: String) -> Result<(), Error> {
+    pub async fn set_comment(&self, comment: &str) -> Result<(), Error> {
         let mut args = BytesMut::new();
         comment.serialize(&mut args);
         let (count, mut stream) = with_context(
@@ -308,7 +308,7 @@ impl NimbusCoreEthernet {
         Ok(comment)
     }
 
-    pub async fn set_instrument_id(&self, instrument_id: String) -> Result<(), Error> {
+    pub async fn set_instrument_id(&self, instrument_id: &str) -> Result<(), Error> {
         let mut args = BytesMut::new();
         instrument_id.serialize(&mut args);
         let (count, mut stream) = with_context(

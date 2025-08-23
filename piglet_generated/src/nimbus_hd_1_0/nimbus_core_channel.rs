@@ -112,7 +112,7 @@ impl NimbusCoreChannel {
         &self,
 
         command_timeout: i32,
-        request: String,
+        request: &str,
     ) -> Result</* response= */ String, Error> {
         let mut args = BytesMut::new();
         command_timeout.serialize(&mut args);
@@ -138,7 +138,7 @@ impl NimbusCoreChannel {
         Ok(response)
     }
 
-    pub async fn send(&self, request: String) -> Result<(), Error> {
+    pub async fn send(&self, request: &str) -> Result<(), Error> {
         let mut args = BytesMut::new();
         request.serialize(&mut args);
         let (count, mut stream) = with_context(
@@ -376,7 +376,7 @@ impl NimbusCoreChannel {
         tadm_enabled: bool,
         limit_curve_index: u32,
         recording_mode: u16,
-        measurement_id: String,
+        measurement_id: &str,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         aspirate_mode.serialize(&mut args);
@@ -484,7 +484,7 @@ impl NimbusCoreChannel {
         tadm_enabled: bool,
         limit_curve_index: u32,
         recording_mode: u16,
-        measurement_id: String,
+        measurement_id: &str,
         tip_is_filtered: bool,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
@@ -598,7 +598,7 @@ impl NimbusCoreChannel {
         tadm_enabled: bool,
         limit_curve_index: u32,
         recording_mode: u16,
-        measurement_id: String,
+        measurement_id: &str,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         aspirate_mode.serialize(&mut args);
@@ -698,7 +698,7 @@ impl NimbusCoreChannel {
         tadm_enabled: bool,
         limit_curve_index: u32,
         recording_mode: u16,
-        measurement_id: String,
+        measurement_id: &str,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         liquid_seek_height.serialize(&mut args);
@@ -796,7 +796,7 @@ impl NimbusCoreChannel {
         tadm_enabled: bool,
         limit_curve_index: u32,
         recording_mode: u16,
-        measurement_id: String,
+        measurement_id: &str,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         dispense_height.serialize(&mut args);
@@ -885,7 +885,7 @@ impl NimbusCoreChannel {
         tadm_enabled: bool,
         limit_curve_index: u32,
         recording_mode: u16,
-        measurement_id: String,
+        measurement_id: &str,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         dispense_height.serialize(&mut args);
@@ -1838,7 +1838,7 @@ impl NimbusCoreChannel {
     pub async fn create_limit_curve(
         &self,
 
-        name: String,
+        name: &str,
         lower_limit_x: impl AsRef<[u16]>,
         lower_limit_y: impl AsRef<[i16]>,
         upper_limit_x: impl AsRef<[u16]>,
@@ -1915,11 +1915,7 @@ impl NimbusCoreChannel {
         Ok(GetLimitCurveNamesReply { names })
     }
 
-    pub async fn get_limit_curve_info(
-        &self,
-
-        name: String,
-    ) -> Result<GetLimitCurveInfoReply, Error> {
+    pub async fn get_limit_curve_info(&self, name: &str) -> Result<GetLimitCurveInfoReply, Error> {
         let mut args = BytesMut::new();
         name.serialize(&mut args);
         let (count, mut stream) = with_context(
@@ -2435,11 +2431,11 @@ impl NimbusCoreChannel {
         transport_air_volume: u32,
         dispense_speed: u32,
         cutoff_speed: u32,
-        dispense_pattern: String,
+        dispense_pattern: &str,
         tadm_enabled: bool,
         limit_curve_index: u32,
         recording_mode: u16,
-        measurement_id: String,
+        measurement_id: &str,
     ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         volume.serialize(&mut args);

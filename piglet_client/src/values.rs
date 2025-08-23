@@ -200,11 +200,15 @@ impl PigletDeserialize for u32 {
     }
 }
 
+impl PigletCodec for &str {
+    const TYPE_ID: u8 = 15;
+}
+
 impl PigletCodec for String {
     const TYPE_ID: u8 = 15;
 }
 
-impl PigletSerialize for String {
+impl PigletSerialize for &str {
     fn serialize(&self, stream: &mut BytesMut) {
         stream.put_u8(Self::TYPE_ID);
         stream.put_u8(0); // no extra padding
@@ -212,6 +216,12 @@ impl PigletSerialize for String {
         stream.put_u16_le(length);
         stream.put_slice(self.as_bytes());
         stream.put_u8(0); // null terminator
+    }
+}
+
+impl PigletSerialize for String {
+    fn serialize(&self, stream: &mut BytesMut) {
+        self.as_str().serialize(stream);
     }
 }
 
@@ -610,6 +620,10 @@ impl PigletDeserialize for ErrorCode {
     }
 }
 
+impl PigletCodec for &[&str] {
+    const TYPE_ID: u8 = 34;
+}
+
 impl PigletCodec for &[String] {
     const TYPE_ID: u8 = 34;
 }
@@ -642,6 +656,22 @@ impl PigletDeserialize for Vec<String> {
         } else {
             Vec::new()
         })
+    }
+}
+
+impl PigletSerialize for &[&str] {
+    fn serialize(&self, stream: &mut BytesMut) {
+        let mut length = 0;
+        for item in self.iter() {
+            length += item.len() + 1; // +1 for null terminator
+        }
+        stream.put_u8(Self::TYPE_ID);
+        stream.put_u8(0);
+        stream.put_u16_le(length as u16);
+        for item in self.iter() {
+            stream.put_slice(item.as_bytes());
+            stream.put_u8(0); // null terminator
+        }
     }
 }
 
