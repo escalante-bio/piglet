@@ -2,6 +2,7 @@ use crate::client::Error::{CallError, ConnectionError};
 use crate::connection::{Connection, ConnectionDetails, connect};
 use crate::object_address::ObjectAddress;
 use crate::values::{ErrorCode, PigletCodec};
+use anyhow::{Context, anyhow, bail};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -21,7 +22,7 @@ pub struct RobotClient {
 }
 
 impl RobotClient {
-    pub async fn connect<T: ToSocketAddrs>(address: &T) -> Result<RobotClient, anyhow::Error> {
+    pub async fn connect<T: ToSocketAddrs>(address: T) -> Result<RobotClient, anyhow::Error> {
         let ConnectionDetails {
             connection,
             client_id,
@@ -95,10 +96,19 @@ impl RobotClient {
         } else {
             let code = ErrorCode::deserialize(&mut bytes)?;
             let message = String::deserialize(&mut bytes)?;
+            let errors = if code == ErrorCode(21) {
+                message
+                    .split(';')
+                    .into_iter()
+                    .map(|m| parse_robot_error(m))
+                    .collect::<anyhow::Result<Vec<_>>>()
+                    .map_err(|e| ConnectionError(e))?
+            } else {
+                vec![parse_robot_error(&message).map_err(|e| ConnectionError(e))?]
+            };
             Err(CallError {
-                code,
                 source: destination.clone(),
-                message,
+                errors,
             })
         }
     }
@@ -159,12 +169,27 @@ impl RobotClient {
     }
 }
 
+#[derive(Clone, Debug)]
+struct RobotError {
+    code: ErrorCode,
+    source: ObjectAddress,
+}
+
+impl std::fmt::Display for RobotError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(
+            f,
+            "Call to {} failed with code {:?}",
+            self.source, self.code
+        )
+    }
+}
+
 #[derive(Debug)]
 pub enum Error {
     CallError {
-        code: ErrorCode,
         source: ObjectAddress,
-        message: String,
+        errors: Vec<RobotError>,
     },
     ConnectionError(anyhow::Error),
 }
@@ -181,15 +206,17 @@ impl std::error::Error for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
-            CallError {
-                code,
-                source,
-                message,
-            } => write!(
-                f,
-                "Call to {} failed with code {:?}: {}",
-                source, code, message
-            ),
+            CallError { source, errors } => {
+                if errors.len() == 1 {
+                    write!(f, "{}", errors.get(0).unwrap())
+                } else {
+                    write!(f, "Call to {} failed with multiple errors:\n", source);
+                    for error in errors {
+                        write!(f, " - {}\n", error);
+                    }
+                    Ok(())
+                }
+            }
             ConnectionError(e) => write!(f, "{}", e.to_string()),
         }
     }
@@ -459,4 +486,41 @@ fn read_registration(mut bytes: Bytes) -> Result<RegistrationResponse, anyhow::E
     }
 
     Ok(RegistrationResponse { roots })
+}
+
+fn parse_robot_error(message: &str) -> anyhow::Result<RobotError> {
+    let (raw_source, rest) = message
+        .split_once(':')
+        .ok_or_else(|| anyhow!("Unable to parse error {}", message))?;
+    let source_parts: Vec<u16> = raw_source
+        .split('.')
+        .map(|s| u16::from_str_radix(&s[2..], 16))
+        .collect::<Result<Vec<u16>, _>>()?;
+    if source_parts.len() != 3 {
+        bail!(
+            "Unable to parse the robot error source. Original: {}",
+            message
+        );
+    }
+    let [module_id, node_id, object_id] = source_parts.try_into().unwrap();
+    let source = ObjectAddress {
+        module_id,
+        node_id,
+        object_id,
+    };
+    let detail_parts: Vec<u16> = rest
+        .split(',')
+        .map(|s| u16::from_str_radix(&s[2..], 16))
+        .collect::<Result<Vec<u16>, _>>()?;
+    if detail_parts.len() != 3 {
+        bail!(
+            "Unable to parse the robot error details. Original: {}",
+            message
+        );
+    }
+    let [_unknown, _call_type_id, code] = detail_parts.try_into().unwrap();
+    Ok(RobotError {
+        source,
+        code: ErrorCode(code),
+    })
 }

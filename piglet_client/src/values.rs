@@ -452,7 +452,7 @@ impl PigletCodec for NetworkResult {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ErrorCode(u16);
+pub struct ErrorCode(pub u16);
 
 impl PigletCodec for ErrorCode {
     const TYPE_ID: u8 = 33;
