@@ -174,26 +174,6 @@ impl NimbusCoreXyCoord {
         Ok(())
     }
 
-    pub async fn move_x_relative_2(&self, x_distance: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        x_distance.serialize(&mut args);
-        let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
-            || {
-                let parameters = vec![format!("  x_distance: {:?}", x_distance)];
-                format!(
-                    "in call to NimbusCoreXyCoord.MoveXRelative_2(\n{}\n)",
-                    parameters.join("\n")
-                )
-            },
-        )?;
-
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
     pub async fn move_x_absolute_speed(
         &self,
 
@@ -435,6 +415,38 @@ impl NimbusCoreXyCoord {
         }
         let y_velocity = u16::deserialize(&mut stream)?;
         Ok(y_velocity)
+    }
+
+    pub async fn move_x_relative_2(
+        &self,
+
+        x_distance: i32,
+        acceleration: u32,
+        velocity: u32,
+    ) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        x_distance.serialize(&mut args);
+        acceleration.serialize(&mut args);
+        velocity.serialize(&mut args);
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 19, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_distance: {:?}", x_distance),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreXyCoord.MoveXRelative_2(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
     }
 
     pub async fn move_y_relative(

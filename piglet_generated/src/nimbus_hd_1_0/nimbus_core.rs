@@ -353,26 +353,6 @@ impl NimbusCore {
         })
     }
 
-    pub async fn get_channel_configuration_2(
-        &self,
-    ) -> Result<GetChannelConfiguration_2Reply, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 0, 15, args.freeze()).await,
-            || "in call to NimbusCore.GetChannelConfiguration_2()".to_string(),
-        )?;
-
-        if count != 2 {
-            return Err(ConnectionError(anyhow!("Expected 2 values, not {}", count)));
-        }
-        let channels = u16::deserialize(&mut stream)?;
-        let channel_types = Vec::<i16>::deserialize(&mut stream)?;
-        Ok(GetChannelConfiguration_2Reply {
-            channels,
-            channel_types,
-        })
-    }
-
     pub async fn preinitialize_smart(&self) -> Result<(), Error> {
         let mut args = BytesMut::new();
         let (count, mut stream) = with_context(
@@ -437,27 +417,6 @@ impl NimbusCore {
                 let parameters = vec![format!("  device_id: {:?}", device_id)];
                 format!(
                     "in call to NimbusCore.IsDevicePresent_1(\n{}\n)",
-                    parameters.join("\n")
-                )
-            },
-        )?;
-
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let present = bool::deserialize(&mut stream)?;
-        Ok(present)
-    }
-
-    pub async fn is_device_present_2(&self, device_id: i16) -> Result</* present= */ bool, Error> {
-        let mut args = BytesMut::new();
-        device_id.serialize(&mut args);
-        let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 0, 20, args.freeze()).await,
-            || {
-                let parameters = vec![format!("  device_id: {:?}", device_id)];
-                format!(
-                    "in call to NimbusCore.IsDevicePresent_2(\n{}\n)",
                     parameters.join("\n")
                 )
             },
@@ -705,6 +664,47 @@ impl NimbusCore {
             return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
         }
         Ok(())
+    }
+
+    pub async fn get_channel_configuration_2(
+        &self,
+    ) -> Result</* configuration= */ Vec<ChannelConfiguration>, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 30, args.freeze()).await,
+            || "in call to NimbusCore.GetChannelConfiguration_2()".to_string(),
+        )?;
+
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let configuration = MVec::<ChannelConfiguration>::deserialize(&mut stream)?.0;
+        Ok(configuration)
+    }
+
+    pub async fn is_device_present_2(
+        &self,
+
+        device_id: DeviceId,
+    ) -> Result</* present= */ bool, Error> {
+        let mut args = BytesMut::new();
+        device_id.serialize(&mut args);
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 31, args.freeze()).await,
+            || {
+                let parameters = vec![format!("  device_id: {:?}", device_id)];
+                format!(
+                    "in call to NimbusCore.IsDevicePresent_2(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let present = bool::deserialize(&mut stream)?;
+        Ok(present)
     }
 
     pub async fn get_x_velocity_limits(&self) -> Result<GetXVelocityLimitsReply, Error> {
@@ -1063,13 +1063,6 @@ pub struct ShiftAndScanRowReply {
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetChannelConfiguration_1Reply {
-    channels: u16,
-    channel_types: Vec<i16>,
-}
-
-#[allow(non_camel_case_types)]
-#[derive(Clone, Debug)]
-pub struct GetChannelConfiguration_2Reply {
     channels: u16,
     channel_types: Vec<i16>,
 }

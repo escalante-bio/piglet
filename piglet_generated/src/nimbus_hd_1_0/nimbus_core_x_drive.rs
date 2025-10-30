@@ -78,13 +78,28 @@ impl NimbusCoreXDrive {
         Ok(())
     }
 
-    pub async fn move_absolute_2(&self, position: i32) -> Result<(), Error> {
+    pub async fn move_absolute_2(
+        &self,
+
+        position: i32,
+        velocity: u32,
+        acceleration: u32,
+        restore_vel_acc: bool,
+    ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         position.serialize(&mut args);
+        velocity.serialize(&mut args);
+        acceleration.serialize(&mut args);
+        restore_vel_acc.serialize(&mut args);
         let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 3, 3, args.freeze()).await,
+            self.robot.act(&self.address, 1, 3, 4, args.freeze()).await,
             || {
-                let parameters = vec![format!("  position: {:?}", position)];
+                let parameters = vec![
+                    format!("  position: {:?}", position),
+                    format!("  velocity: {:?}", velocity),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  restore_vel_acc: {:?}", restore_vel_acc),
+                ];
                 format!(
                     "in call to NimbusCoreXDrive.MoveAbsolute_2(\n{}\n)",
                     parameters.join("\n")
@@ -118,13 +133,28 @@ impl NimbusCoreXDrive {
         Ok(())
     }
 
-    pub async fn move_relative_2(&self, distance: i32) -> Result<(), Error> {
+    pub async fn move_relative_2(
+        &self,
+
+        distance: i32,
+        velocity: u32,
+        acceleration: u32,
+        restore_vel_acc: bool,
+    ) -> Result<(), Error> {
         let mut args = BytesMut::new();
         distance.serialize(&mut args);
+        velocity.serialize(&mut args);
+        acceleration.serialize(&mut args);
+        restore_vel_acc.serialize(&mut args);
         let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
+            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
             || {
-                let parameters = vec![format!("  distance: {:?}", distance)];
+                let parameters = vec![
+                    format!("  distance: {:?}", distance),
+                    format!("  velocity: {:?}", velocity),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  restore_vel_acc: {:?}", restore_vel_acc),
+                ];
                 format!(
                     "in call to NimbusCoreXDrive.MoveRelative_2(\n{}\n)",
                     parameters.join("\n")
@@ -181,20 +211,29 @@ impl NimbusCoreXDrive {
         travel_limits_enable: bool,
         trip_sense: i8,
         trip_flag: i8,
+        velocity: u32,
+        acceleration: u32,
+        restore_vel_acc: bool,
     ) -> Result</* trip_pos= */ i32, Error> {
         let mut args = BytesMut::new();
         distance.serialize(&mut args);
         travel_limits_enable.serialize(&mut args);
         trip_sense.serialize(&mut args);
         trip_flag.serialize(&mut args);
+        velocity.serialize(&mut args);
+        acceleration.serialize(&mut args);
+        restore_vel_acc.serialize(&mut args);
         let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 3, 7, args.freeze()).await,
+            self.robot.act(&self.address, 1, 3, 8, args.freeze()).await,
             || {
                 let parameters = vec![
                     format!("  distance: {:?}", distance),
                     format!("  travel_limits_enable: {:?}", travel_limits_enable),
                     format!("  trip_sense: {:?}", trip_sense),
                     format!("  trip_flag: {:?}", trip_flag),
+                    format!("  velocity: {:?}", velocity),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  restore_vel_acc: {:?}", restore_vel_acc),
                 ];
                 format!(
                     "in call to NimbusCoreXDrive.SeekToPositionFlag_2(\n{}\n)",

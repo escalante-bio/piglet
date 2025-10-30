@@ -121,26 +121,6 @@ impl NimbusCoreGripperXyCoord {
         Ok(())
     }
 
-    pub async fn move_x_relative_2(&self, x_distance: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        x_distance.serialize(&mut args);
-        let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 3, 5, args.freeze()).await,
-            || {
-                let parameters = vec![format!("  x_distance: {:?}", x_distance)];
-                format!(
-                    "in call to NimbusCoreGripperXyCoord.MoveXRelative_2(\n{}\n)",
-                    parameters.join("\n")
-                )
-            },
-        )?;
-
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
     pub async fn move_y_absolute(&self, y_position: i32) -> Result<(), Error> {
         let mut args = BytesMut::new();
         y_position.serialize(&mut args);
@@ -170,26 +150,6 @@ impl NimbusCoreGripperXyCoord {
                 let parameters = vec![format!("  y_distance: {:?}", y_distance)];
                 format!(
                     "in call to NimbusCoreGripperXyCoord.MoveYRelative_1(\n{}\n)",
-                    parameters.join("\n")
-                )
-            },
-        )?;
-
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
-    pub async fn move_y_relative_2(&self, y_distance: i32) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        y_distance.serialize(&mut args);
-        let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 3, 7, args.freeze()).await,
-            || {
-                let parameters = vec![format!("  y_distance: {:?}", y_distance)];
-                format!(
-                    "in call to NimbusCoreGripperXyCoord.MoveYRelative_2(\n{}\n)",
                     parameters.join("\n")
                 )
             },
@@ -265,6 +225,62 @@ impl NimbusCoreGripperXyCoord {
             x_position,
             y_position,
         })
+    }
+
+    pub async fn move_x_relative_2(
+        &self,
+
+        x_distance: i32,
+        acceleration: u32,
+        velocity: u32,
+    ) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        x_distance.serialize(&mut args);
+        acceleration.serialize(&mut args);
+        velocity.serialize(&mut args);
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 12, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  x_distance: {:?}", x_distance),
+                    format!("  acceleration: {:?}", acceleration),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreGripperXyCoord.MoveXRelative_2(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn move_y_relative_2(&self, y_distance: i32, velocity: u32) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        y_distance.serialize(&mut args);
+        velocity.serialize(&mut args);
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 13, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  y_distance: {:?}", y_distance),
+                    format!("  velocity: {:?}", velocity),
+                ];
+                format!(
+                    "in call to NimbusCoreGripperXyCoord.MoveYRelative_2(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
     }
 
     pub async fn object_info(&self) -> Result<ObjectInfoReply, Error> {

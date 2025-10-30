@@ -376,143 +376,6 @@ impl NimbusCorePipette {
         Ok(())
     }
 
-    pub async fn aspirate_2(
-        &self,
-
-        aspirate_type: impl AsRef<[i16]>,
-        tips_used: impl AsRef<[u16]>,
-        x_position: impl AsRef<[i32]>,
-        y_position: impl AsRef<[i32]>,
-        traverse_height: i32,
-        liquid_seek_height: impl AsRef<[i32]>,
-        liquid_surface_height: impl AsRef<[i32]>,
-        submerge_depth: impl AsRef<[i32]>,
-        follow_depth: impl AsRef<[i32]>,
-        z_min_position: impl AsRef<[i32]>,
-        clot_check_height: impl AsRef<[i32]>,
-        z_final: i32,
-        liquid_exit_speed: impl AsRef<[u32]>,
-        blowout_volume: impl AsRef<[u32]>,
-        prewet_volume: impl AsRef<[u32]>,
-        aspirate_volume: impl AsRef<[u32]>,
-        transport_air_volume: impl AsRef<[u32]>,
-        aspirate_speed: impl AsRef<[u32]>,
-        settling_time: impl AsRef<[u32]>,
-        mix_volume: impl AsRef<[u32]>,
-        mix_cycles: impl AsRef<[u32]>,
-        mix_position: impl AsRef<[i32]>,
-        mix_follow_distance: impl AsRef<[i32]>,
-        mix_speed: impl AsRef<[u32]>,
-        tube_section_height: impl AsRef<[i32]>,
-        tube_section_ratio: impl AsRef<[i32]>,
-        lld_mode: impl AsRef<[i16]>,
-        capacitive_lld_sensitivity: impl AsRef<[i16]>,
-        pressure_lld_sensitivity: impl AsRef<[i16]>,
-        lld_height_difference: impl AsRef<[i32]>,
-        tadm_enabled: bool,
-        limit_curve_index: impl AsRef<[u32]>,
-        recording_mode: u16,
-    ) -> Result<(), Error> {
-        let mut args = BytesMut::new();
-        aspirate_type.as_ref().serialize(&mut args);
-        tips_used.as_ref().serialize(&mut args);
-        x_position.as_ref().serialize(&mut args);
-        y_position.as_ref().serialize(&mut args);
-        traverse_height.serialize(&mut args);
-        liquid_seek_height.as_ref().serialize(&mut args);
-        liquid_surface_height.as_ref().serialize(&mut args);
-        submerge_depth.as_ref().serialize(&mut args);
-        follow_depth.as_ref().serialize(&mut args);
-        z_min_position.as_ref().serialize(&mut args);
-        clot_check_height.as_ref().serialize(&mut args);
-        z_final.serialize(&mut args);
-        liquid_exit_speed.as_ref().serialize(&mut args);
-        blowout_volume.as_ref().serialize(&mut args);
-        prewet_volume.as_ref().serialize(&mut args);
-        aspirate_volume.as_ref().serialize(&mut args);
-        transport_air_volume.as_ref().serialize(&mut args);
-        aspirate_speed.as_ref().serialize(&mut args);
-        settling_time.as_ref().serialize(&mut args);
-        mix_volume.as_ref().serialize(&mut args);
-        mix_cycles.as_ref().serialize(&mut args);
-        mix_position.as_ref().serialize(&mut args);
-        mix_follow_distance.as_ref().serialize(&mut args);
-        mix_speed.as_ref().serialize(&mut args);
-        tube_section_height.as_ref().serialize(&mut args);
-        tube_section_ratio.as_ref().serialize(&mut args);
-        lld_mode.as_ref().serialize(&mut args);
-        capacitive_lld_sensitivity.as_ref().serialize(&mut args);
-        pressure_lld_sensitivity.as_ref().serialize(&mut args);
-        lld_height_difference.as_ref().serialize(&mut args);
-        tadm_enabled.serialize(&mut args);
-        limit_curve_index.as_ref().serialize(&mut args);
-        recording_mode.serialize(&mut args);
-        let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 3, 6, args.freeze()).await,
-            || {
-                let parameters = vec![
-                    format!("  aspirate_type: {:?}", aspirate_type.as_ref()),
-                    format!("  tips_used: {:?}", tips_used.as_ref()),
-                    format!("  x_position: {:?}", x_position.as_ref()),
-                    format!("  y_position: {:?}", y_position.as_ref()),
-                    format!("  traverse_height: {:?}", traverse_height),
-                    format!("  liquid_seek_height: {:?}", liquid_seek_height.as_ref()),
-                    format!(
-                        "  liquid_surface_height: {:?}",
-                        liquid_surface_height.as_ref()
-                    ),
-                    format!("  submerge_depth: {:?}", submerge_depth.as_ref()),
-                    format!("  follow_depth: {:?}", follow_depth.as_ref()),
-                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
-                    format!("  clot_check_height: {:?}", clot_check_height.as_ref()),
-                    format!("  z_final: {:?}", z_final),
-                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed.as_ref()),
-                    format!("  blowout_volume: {:?}", blowout_volume.as_ref()),
-                    format!("  prewet_volume: {:?}", prewet_volume.as_ref()),
-                    format!("  aspirate_volume: {:?}", aspirate_volume.as_ref()),
-                    format!(
-                        "  transport_air_volume: {:?}",
-                        transport_air_volume.as_ref()
-                    ),
-                    format!("  aspirate_speed: {:?}", aspirate_speed.as_ref()),
-                    format!("  settling_time: {:?}", settling_time.as_ref()),
-                    format!("  mix_volume: {:?}", mix_volume.as_ref()),
-                    format!("  mix_cycles: {:?}", mix_cycles.as_ref()),
-                    format!("  mix_position: {:?}", mix_position.as_ref()),
-                    format!("  mix_follow_distance: {:?}", mix_follow_distance.as_ref()),
-                    format!("  mix_speed: {:?}", mix_speed.as_ref()),
-                    format!("  tube_section_height: {:?}", tube_section_height.as_ref()),
-                    format!("  tube_section_ratio: {:?}", tube_section_ratio.as_ref()),
-                    format!("  lld_mode: {:?}", lld_mode.as_ref()),
-                    format!(
-                        "  capacitive_lld_sensitivity: {:?}",
-                        capacitive_lld_sensitivity.as_ref()
-                    ),
-                    format!(
-                        "  pressure_lld_sensitivity: {:?}",
-                        pressure_lld_sensitivity.as_ref()
-                    ),
-                    format!(
-                        "  lld_height_difference: {:?}",
-                        lld_height_difference.as_ref()
-                    ),
-                    format!("  tadm_enabled: {:?}", tadm_enabled),
-                    format!("  limit_curve_index: {:?}", limit_curve_index.as_ref()),
-                    format!("  recording_mode: {:?}", recording_mode),
-                ];
-                format!(
-                    "in call to NimbusCorePipette.Aspirate_2(\n{}\n)",
-                    parameters.join("\n")
-                )
-            },
-        )?;
-
-        if count != 0 {
-            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
-        }
-        Ok(())
-    }
-
     pub async fn dispense(
         &self,
 
@@ -3252,6 +3115,146 @@ impl NimbusCorePipette {
                 let parameters = vec![format!("  tips_used: {:?}", tips_used.as_ref())];
                 format!(
                     "in call to NimbusCorePipette.ZMoveSafe(\n{}\n)",
+                    parameters.join("\n")
+                )
+            },
+        )?;
+
+        if count != 0 {
+            return Err(ConnectionError(anyhow!("Expected 0 values, not {}", count)));
+        }
+        Ok(())
+    }
+
+    pub async fn aspirate_2(
+        &self,
+
+        aspirate_type: impl AsRef<[i16]>,
+        tips_used: impl AsRef<[u16]>,
+        x_position: impl AsRef<[i32]>,
+        y_position: impl AsRef<[i32]>,
+        traverse_height: i32,
+        liquid_seek_height: impl AsRef<[i32]>,
+        liquid_surface_height: impl AsRef<[i32]>,
+        submerge_depth: impl AsRef<[i32]>,
+        follow_depth: impl AsRef<[i32]>,
+        z_min_position: impl AsRef<[i32]>,
+        clot_check_height: impl AsRef<[i32]>,
+        z_final: i32,
+        liquid_exit_speed: impl AsRef<[u32]>,
+        blowout_volume: impl AsRef<[u32]>,
+        prewet_volume: impl AsRef<[u32]>,
+        aspirate_volume: impl AsRef<[u32]>,
+        transport_air_volume: impl AsRef<[u32]>,
+        aspirate_speed: impl AsRef<[u32]>,
+        settling_time: impl AsRef<[u32]>,
+        mix_volume: impl AsRef<[u32]>,
+        mix_cycles: impl AsRef<[u32]>,
+        mix_position: impl AsRef<[i32]>,
+        mix_follow_distance: impl AsRef<[i32]>,
+        mix_speed: impl AsRef<[u32]>,
+        aspirate_offset: impl AsRef<[i32]>,
+        tube_section_height: impl AsRef<[i32]>,
+        tube_section_ratio: impl AsRef<[i32]>,
+        lld_mode: impl AsRef<[i16]>,
+        capacitive_lld_sensitivity: impl AsRef<[i16]>,
+        pressure_lld_sensitivity: impl AsRef<[i16]>,
+        lld_height_difference: impl AsRef<[i32]>,
+        tadm_enabled: bool,
+        limit_curve_index: impl AsRef<[u32]>,
+        recording_mode: u16,
+    ) -> Result<(), Error> {
+        let mut args = BytesMut::new();
+        aspirate_type.as_ref().serialize(&mut args);
+        tips_used.as_ref().serialize(&mut args);
+        x_position.as_ref().serialize(&mut args);
+        y_position.as_ref().serialize(&mut args);
+        traverse_height.serialize(&mut args);
+        liquid_seek_height.as_ref().serialize(&mut args);
+        liquid_surface_height.as_ref().serialize(&mut args);
+        submerge_depth.as_ref().serialize(&mut args);
+        follow_depth.as_ref().serialize(&mut args);
+        z_min_position.as_ref().serialize(&mut args);
+        clot_check_height.as_ref().serialize(&mut args);
+        z_final.serialize(&mut args);
+        liquid_exit_speed.as_ref().serialize(&mut args);
+        blowout_volume.as_ref().serialize(&mut args);
+        prewet_volume.as_ref().serialize(&mut args);
+        aspirate_volume.as_ref().serialize(&mut args);
+        transport_air_volume.as_ref().serialize(&mut args);
+        aspirate_speed.as_ref().serialize(&mut args);
+        settling_time.as_ref().serialize(&mut args);
+        mix_volume.as_ref().serialize(&mut args);
+        mix_cycles.as_ref().serialize(&mut args);
+        mix_position.as_ref().serialize(&mut args);
+        mix_follow_distance.as_ref().serialize(&mut args);
+        mix_speed.as_ref().serialize(&mut args);
+        aspirate_offset.as_ref().serialize(&mut args);
+        tube_section_height.as_ref().serialize(&mut args);
+        tube_section_ratio.as_ref().serialize(&mut args);
+        lld_mode.as_ref().serialize(&mut args);
+        capacitive_lld_sensitivity.as_ref().serialize(&mut args);
+        pressure_lld_sensitivity.as_ref().serialize(&mut args);
+        lld_height_difference.as_ref().serialize(&mut args);
+        tadm_enabled.serialize(&mut args);
+        limit_curve_index.as_ref().serialize(&mut args);
+        recording_mode.serialize(&mut args);
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 3, 84, args.freeze()).await,
+            || {
+                let parameters = vec![
+                    format!("  aspirate_type: {:?}", aspirate_type.as_ref()),
+                    format!("  tips_used: {:?}", tips_used.as_ref()),
+                    format!("  x_position: {:?}", x_position.as_ref()),
+                    format!("  y_position: {:?}", y_position.as_ref()),
+                    format!("  traverse_height: {:?}", traverse_height),
+                    format!("  liquid_seek_height: {:?}", liquid_seek_height.as_ref()),
+                    format!(
+                        "  liquid_surface_height: {:?}",
+                        liquid_surface_height.as_ref()
+                    ),
+                    format!("  submerge_depth: {:?}", submerge_depth.as_ref()),
+                    format!("  follow_depth: {:?}", follow_depth.as_ref()),
+                    format!("  z_min_position: {:?}", z_min_position.as_ref()),
+                    format!("  clot_check_height: {:?}", clot_check_height.as_ref()),
+                    format!("  z_final: {:?}", z_final),
+                    format!("  liquid_exit_speed: {:?}", liquid_exit_speed.as_ref()),
+                    format!("  blowout_volume: {:?}", blowout_volume.as_ref()),
+                    format!("  prewet_volume: {:?}", prewet_volume.as_ref()),
+                    format!("  aspirate_volume: {:?}", aspirate_volume.as_ref()),
+                    format!(
+                        "  transport_air_volume: {:?}",
+                        transport_air_volume.as_ref()
+                    ),
+                    format!("  aspirate_speed: {:?}", aspirate_speed.as_ref()),
+                    format!("  settling_time: {:?}", settling_time.as_ref()),
+                    format!("  mix_volume: {:?}", mix_volume.as_ref()),
+                    format!("  mix_cycles: {:?}", mix_cycles.as_ref()),
+                    format!("  mix_position: {:?}", mix_position.as_ref()),
+                    format!("  mix_follow_distance: {:?}", mix_follow_distance.as_ref()),
+                    format!("  mix_speed: {:?}", mix_speed.as_ref()),
+                    format!("  aspirate_offset: {:?}", aspirate_offset.as_ref()),
+                    format!("  tube_section_height: {:?}", tube_section_height.as_ref()),
+                    format!("  tube_section_ratio: {:?}", tube_section_ratio.as_ref()),
+                    format!("  lld_mode: {:?}", lld_mode.as_ref()),
+                    format!(
+                        "  capacitive_lld_sensitivity: {:?}",
+                        capacitive_lld_sensitivity.as_ref()
+                    ),
+                    format!(
+                        "  pressure_lld_sensitivity: {:?}",
+                        pressure_lld_sensitivity.as_ref()
+                    ),
+                    format!(
+                        "  lld_height_difference: {:?}",
+                        lld_height_difference.as_ref()
+                    ),
+                    format!("  tadm_enabled: {:?}", tadm_enabled),
+                    format!("  limit_curve_index: {:?}", limit_curve_index.as_ref()),
+                    format!("  recording_mode: {:?}", recording_mode),
+                ];
+                format!(
+                    "in call to NimbusCorePipette.Aspirate_2(\n{}\n)",
                     parameters.join("\n")
                 )
             },

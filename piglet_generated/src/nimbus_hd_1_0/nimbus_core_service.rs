@@ -190,20 +190,6 @@ impl NimbusCoreService {
         Ok(channel_types)
     }
 
-    pub async fn get_channel_types_2(&self) -> Result</* channel_types= */ Vec<i16>, Error> {
-        let mut args = BytesMut::new();
-        let (count, mut stream) = with_context(
-            self.robot.act(&self.address, 1, 0, 8, args.freeze()).await,
-            || "in call to NimbusCoreService.GetChannelTypes_2()".to_string(),
-        )?;
-
-        if count != 1 {
-            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
-        }
-        let channel_types = Vec::<i16>::deserialize(&mut stream)?;
-        Ok(channel_types)
-    }
-
     pub async fn set_channel_counters(
         &self,
 
@@ -411,6 +397,20 @@ impl NimbusCoreService {
             s_position,
             s_encoder_position,
         })
+    }
+
+    pub async fn get_channel_types_2(&self) -> Result</* value= */ Vec<ChannelType>, Error> {
+        let mut args = BytesMut::new();
+        let (count, mut stream) = with_context(
+            self.robot.act(&self.address, 1, 0, 17, args.freeze()).await,
+            || "in call to NimbusCoreService.GetChannelTypes_2()".to_string(),
+        )?;
+
+        if count != 1 {
+            return Err(ConnectionError(anyhow!("Expected 1 values, not {}", count)));
+        }
+        let value = MVec::<ChannelType>::deserialize(&mut stream)?.0;
+        Ok(value)
     }
 
     pub async fn get_board_information(&self) -> Result<GetBoardInformationReply, Error> {

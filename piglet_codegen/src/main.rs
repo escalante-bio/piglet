@@ -612,12 +612,11 @@ impl PigletDeserialize for MVec<{}> {{
     }
 
     let mut flatten = Vec::new();
-    for group in methods.values() {
+    for group in methods.into_values() {
         if group.methods.len() == 1 {
-            flatten.push(group.methods[0].clone());
+            flatten.push(group.methods.into_iter().next().unwrap());
         } else {
-            for i in 0..group.methods.len() {
-                let mut method = group.methods[0].clone();
+            for (i, mut method) in group.methods.into_iter().enumerate() {
                 method.name = format!("{}_{}", method.name, i + 1);
                 flatten.push(method);
             }
