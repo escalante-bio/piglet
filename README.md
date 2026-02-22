@@ -171,3 +171,9 @@ As an example, the
 [`nimbus_hd_1_0`](https://github.com/escalante-bio/piglet/tree/main/piglet_generated/src/nimbus_hd_1_0)
 folder in this repository was generated from our Nimbus HD by running
 `piglet_codegen 172.31.255.3:2000 nimbus_hd_1_0`
+
+## Publishing packages
+
+```sh
+cargo +nightly publish --workspace -Zpackage-workspace --exclude piglet_codegen --dry-run
+```
