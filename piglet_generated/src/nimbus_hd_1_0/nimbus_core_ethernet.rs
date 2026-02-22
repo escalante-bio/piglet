@@ -12,6 +12,7 @@ use piglet_client::{
 };
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct NimbusCoreEthernet {
     address: ObjectAddress,
     robot: Arc<RobotClient>,

@@ -12,6 +12,7 @@ use piglet_client::{
 };
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct NimbusCoreXDrive {
     address: ObjectAddress,
     robot: Arc<RobotClient>,
