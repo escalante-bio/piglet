@@ -978,7 +978,7 @@ pub struct {}Reply {{
                 method.name
             )];
             for e in &return_elements {
-                struct_def.push(format!("  {}: {},", e.name, e.rust_type));
+                struct_def.push(format!("  pub {}: {},", e.name, e.rust_type));
             }
             struct_def.push("}".to_string());
             struct_defs.push(struct_def.join("\n"));

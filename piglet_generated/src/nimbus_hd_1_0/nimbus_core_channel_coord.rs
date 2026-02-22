@@ -3287,174 +3287,174 @@ impl NimbusCoreChannelCoord {
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct CreateLimitCurveReply {
-    index: u32,
+    pub index: u32,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct RetrieveTadmDataReply {
-    offsets: Vec<u16>,
-    tadm_data: Vec<i16>,
+    pub offsets: Vec<u16>,
+    pub tadm_data: Vec<i16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetLimitCurveNamesReply {
-    names: String,
+    pub names: String,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetLimitCurveInfoReply {
-    index: u32,
-    lower_limits: u16,
-    upper_limits: u16,
+    pub index: u32,
+    pub lower_limits: u16,
+    pub upper_limits: u16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetTADMEnableReply {
-    enable: Vec<i16>,
+    pub enable: Vec<i16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetZDefaultSpeedReply {
-    speed: Vec<i32>,
+    pub speed: Vec<i32>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetPotentiometerSettingsReply {
-    gain: Vec<i16>,
-    offset: Vec<i16>,
+    pub gain: Vec<i16>,
+    pub offset: Vec<i16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ReadOnTheFlyDispenseErrorsReply {
-    error: bool,
-    results: Vec<u16>,
+    pub error: bool,
+    pub results: Vec<u16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetChannelConfigurationReply {
-    enabled: Vec<bool>,
+    pub enabled: Vec<bool>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ZSeekObstaclePositionReply {
-    z_position: Vec<i32>,
-    obstacle_detected: Vec<i16>,
+    pub z_position: Vec<i32>,
+    pub obstacle_detected: Vec<i16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ZSeekLldPositionReply {
-    z_position: Vec<i32>,
-    lld_detected: Vec<i16>,
+    pub z_position: Vec<i32>,
+    pub lld_detected: Vec<i16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetHomeSensorsReply {
-    y_home: Vec<bool>,
-    z_home: Vec<bool>,
-    squeeze_home: Vec<bool>,
-    dispense_home: Vec<bool>,
+    pub y_home: Vec<bool>,
+    pub z_home: Vec<bool>,
+    pub squeeze_home: Vec<bool>,
+    pub dispense_home: Vec<bool>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetCalibrationValuesReply {
-    dispense_drive: Vec<i16>,
-    squeeze_drive: Vec<i16>,
-    pressure_lld: Vec<i16>,
-    clot_detection: Vec<i16>,
+    pub dispense_drive: Vec<i16>,
+    pub squeeze_drive: Vec<i16>,
+    pub pressure_lld: Vec<i16>,
+    pub clot_detection: Vec<i16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetExtendedCalibrationValuesReply {
-    tip_type_adjustment: Vec<i16>,
-    pressure_conversion: Vec<i16>,
-    aspirate_monitoring: Vec<i16>,
-    z_bottom_search: Vec<i16>,
+    pub tip_type_adjustment: Vec<i16>,
+    pub pressure_conversion: Vec<i16>,
+    pub aspirate_monitoring: Vec<i16>,
+    pub z_bottom_search: Vec<i16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetCountersReply {
-    tip_pickup_counter: Vec<u32>,
-    tip_eject_counter: Vec<u32>,
-    aspirate_counter: Vec<u32>,
-    dispense_counter: Vec<u32>,
+    pub tip_pickup_counter: Vec<u32>,
+    pub tip_eject_counter: Vec<u32>,
+    pub aspirate_counter: Vec<u32>,
+    pub dispense_counter: Vec<u32>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetPositionsReply {
-    y_position: Vec<i32>,
-    y_encoder_position: Vec<i32>,
-    z_position: Vec<i32>,
-    z_encoder_position: Vec<i32>,
-    d_position: Vec<i32>,
-    d_encoder_position: Vec<i32>,
-    s_position: Vec<i32>,
-    s_encoder_position: Vec<i32>,
+    pub y_position: Vec<i32>,
+    pub y_encoder_position: Vec<i32>,
+    pub z_position: Vec<i32>,
+    pub z_encoder_position: Vec<i32>,
+    pub d_position: Vec<i32>,
+    pub d_encoder_position: Vec<i32>,
+    pub s_position: Vec<i32>,
+    pub s_encoder_position: Vec<i32>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
-    name: String,
-    version: String,
-    methods: u32,
-    subobjects: u16,
+    pub name: String,
+    pub version: String,
+    pub methods: u32,
+    pub subobjects: u16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
-    interfaceid: u8,
-    action: u8,
-    actionid: u16,
-    name: String,
-    parametertypes: String,
-    parameternames: String,
+    pub interfaceid: u8,
+    pub action: u8,
+    pub actionid: u16,
+    pub name: String,
+    pub parametertypes: String,
+    pub parameternames: String,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
+    pub module_id: u16,
+    pub node_id: u16,
+    pub object_id: u16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
-    interface_ids: Vec<u8>,
-    interface_descriptors: Vec<String>,
+    pub interface_ids: Vec<u8>,
+    pub interface_descriptors: Vec<String>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
-    enumeration_names: Vec<String>,
-    number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i32>,
-    enumeration_value_descriptions: Vec<String>,
+    pub enumeration_names: Vec<String>,
+    pub number_enumeration_values: Vec<u32>,
+    pub enumeration_values: Vec<i32>,
+    pub enumeration_value_descriptions: Vec<String>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
-    struct_names: Vec<String>,
-    number_structure_elements: Vec<u32>,
-    structure_element_types: Vec<u8>,
-    structure_element_descriptions: Vec<String>,
+    pub struct_names: Vec<String>,
+    pub number_structure_elements: Vec<u32>,
+    pub structure_element_types: Vec<u8>,
+    pub structure_element_descriptions: Vec<String>,
 }

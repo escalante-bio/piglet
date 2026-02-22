@@ -3490,158 +3490,158 @@ impl PigletSerialize for MSlice<'_, ConfigurationIndexes> {
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct CreateLimitCurveReply {
-    index: u32,
+    pub index: u32,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct RetrieveTadmDataReply {
-    tadm_data: Vec<i16>,
+    pub tadm_data: Vec<i16>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetLimitCurveNamesReply {
-    names: String,
+    pub names: String,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetLimitCurveInfoReply {
-    index: u32,
-    lower_limits: u16,
-    upper_limits: u16,
+    pub index: u32,
+    pub lower_limits: u16,
+    pub upper_limits: u16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetConfigurationReply {
-    enabled: bool,
+    pub enabled: bool,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetPotentiometerDataReply {
-    gain: i16,
-    offset: i16,
+    pub gain: i16,
+    pub offset: i16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetPressureSensorADReply {
-    pressure_lld: i16,
-    tadm: i16,
+    pub pressure_lld: i16,
+    pub tadm: i16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ReadOnTheFlyDispenseErrorsReply {
-    status: String,
+    pub status: String,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ZSeekObstaclePositionReply {
-    position: i32,
-    obstacle_detected: bool,
+    pub position: i32,
+    pub obstacle_detected: bool,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ZSeekLldPositionReply {
-    position: i32,
-    lld_detected: bool,
+    pub position: i32,
+    pub lld_detected: bool,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetCalibrationValuesReply {
-    dispense_drive: i16,
-    squeeze_drive: i16,
-    pressure_lld: i16,
-    clot_detection: i16,
+    pub dispense_drive: i16,
+    pub squeeze_drive: i16,
+    pub pressure_lld: i16,
+    pub clot_detection: i16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetExtendedCalibrationValuesReply {
-    tip_type_adjustment: i16,
-    pressure_conversion: i16,
-    aspirate_monitoring: i16,
-    z_bottom_search: i16,
+    pub tip_type_adjustment: i16,
+    pub pressure_conversion: i16,
+    pub aspirate_monitoring: i16,
+    pub z_bottom_search: i16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetCountersReply {
-    tip_pickup_counter: u32,
-    tip_eject_counter: u32,
-    aspirate_counter: u32,
-    dispense_counter: u32,
+    pub tip_pickup_counter: u32,
+    pub tip_eject_counter: u32,
+    pub aspirate_counter: u32,
+    pub dispense_counter: u32,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct GetPositionsReply {
-    y_position: i32,
-    y_encoder_position: i32,
-    z_position: i32,
-    z_encoder_position: i32,
-    d_position: i32,
-    d_encoder_position: i32,
-    s_position: i32,
-    s_encoder_position: i32,
+    pub y_position: i32,
+    pub y_encoder_position: i32,
+    pub z_position: i32,
+    pub z_encoder_position: i32,
+    pub d_position: i32,
+    pub d_encoder_position: i32,
+    pub s_position: i32,
+    pub s_encoder_position: i32,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
-    name: String,
-    version: String,
-    methods: u32,
-    subobjects: u16,
+    pub name: String,
+    pub version: String,
+    pub methods: u32,
+    pub subobjects: u16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
-    interfaceid: u8,
-    action: u8,
-    actionid: u16,
-    name: String,
-    parametertypes: String,
-    parameternames: String,
+    pub interfaceid: u8,
+    pub action: u8,
+    pub actionid: u16,
+    pub name: String,
+    pub parametertypes: String,
+    pub parameternames: String,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
+    pub module_id: u16,
+    pub node_id: u16,
+    pub object_id: u16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
-    interface_ids: Vec<u8>,
-    interface_descriptors: Vec<String>,
+    pub interface_ids: Vec<u8>,
+    pub interface_descriptors: Vec<String>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
-    enumeration_names: Vec<String>,
-    number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i32>,
-    enumeration_value_descriptions: Vec<String>,
+    pub enumeration_names: Vec<String>,
+    pub number_enumeration_values: Vec<u32>,
+    pub enumeration_values: Vec<i32>,
+    pub enumeration_value_descriptions: Vec<String>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
-    struct_names: Vec<String>,
-    number_structure_elements: Vec<u32>,
-    structure_element_types: Vec<u8>,
-    structure_element_descriptions: Vec<String>,
+    pub struct_names: Vec<String>,
+    pub number_structure_elements: Vec<u32>,
+    pub structure_element_types: Vec<u8>,
+    pub structure_element_descriptions: Vec<String>,
 }

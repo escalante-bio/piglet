@@ -207,52 +207,52 @@ impl NimbusCoreIoNotification {
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct ObjectInfoReply {
-    name: String,
-    version: String,
-    methods: u32,
-    subobjects: u16,
+    pub name: String,
+    pub version: String,
+    pub methods: u32,
+    pub subobjects: u16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct MethodInfoReply {
-    interfaceid: u8,
-    action: u8,
-    actionid: u16,
-    name: String,
-    parametertypes: String,
-    parameternames: String,
+    pub interfaceid: u8,
+    pub action: u8,
+    pub actionid: u16,
+    pub name: String,
+    pub parametertypes: String,
+    pub parameternames: String,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct SubObjectInfoReply {
-    module_id: u16,
-    node_id: u16,
-    object_id: u16,
+    pub module_id: u16,
+    pub node_id: u16,
+    pub object_id: u16,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct InterfaceDescriptorsReply {
-    interface_ids: Vec<u8>,
-    interface_descriptors: Vec<String>,
+    pub interface_ids: Vec<u8>,
+    pub interface_descriptors: Vec<String>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct EnumInfoReply {
-    enumeration_names: Vec<String>,
-    number_enumeration_values: Vec<u32>,
-    enumeration_values: Vec<i32>,
-    enumeration_value_descriptions: Vec<String>,
+    pub enumeration_names: Vec<String>,
+    pub number_enumeration_values: Vec<u32>,
+    pub enumeration_values: Vec<i32>,
+    pub enumeration_value_descriptions: Vec<String>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct StructInfoReply {
-    struct_names: Vec<String>,
-    number_structure_elements: Vec<u32>,
-    structure_element_types: Vec<u8>,
-    structure_element_descriptions: Vec<String>,
+    pub struct_names: Vec<String>,
+    pub number_structure_elements: Vec<u32>,
+    pub structure_element_types: Vec<u8>,
+    pub structure_element_descriptions: Vec<String>,
 }
