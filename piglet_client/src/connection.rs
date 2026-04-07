@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::{
+    io::AsyncWriteExt,
     net::tcp::{OwnedReadHalf, OwnedWriteHalf},
     net::{TcpStream, ToSocketAddrs},
     sync::{mpsc, oneshot},
@@ -13,7 +14,7 @@ pub struct Connection {
     stop_tx: oneshot::Sender<()>,
     task: tokio::task::JoinHandle<()>,
     version: u8,
-    writer: OwnedWriteHalf,
+    write_tx: mpsc::Sender<Bytes>,
 }
 
 impl Connection {
@@ -32,22 +33,32 @@ impl Connection {
         rx
     }
 
-    pub fn unregister_protocol(&self, id: u8) -> () {
-        let mut protocols = self.protocols.lock().unwrap();
-        protocols.remove(&id);
-    }
-
     pub fn write(&self, protocol: u8, bytes: Bytes) -> Result<(), anyhow::Error> {
-        let mut framed = BytesMut::new();
-        framed.put_u16_le(1 + 1 + 1 + 1 + bytes.remaining() as u16);
-        framed.put_u8(protocol);
-        framed.put_u8(self.version);
-        framed.put_u8(0);
-        framed.put_u8(0);
-        framed.put(bytes);
-        let copy = framed.freeze();
-        self.writer.try_write(&copy)?;
+        let frame = frame_message(protocol, self.version, bytes);
+        self.write_tx
+            .try_send(frame)
+            .map_err(|_| anyhow::anyhow!("Write channel closed"))?;
         Ok(())
+    }
+}
+
+fn frame_message(protocol: u8, version: u8, bytes: Bytes) -> Bytes {
+    let mut framed = BytesMut::new();
+    framed.put_u16_le(1 + 1 + 1 + 1 + bytes.remaining() as u16);
+    framed.put_u8(protocol);
+    framed.put_u8(version);
+    framed.put_u8(0);
+    framed.put_u8(0);
+    framed.put(bytes);
+    framed.freeze()
+}
+
+async fn write_loop(mut rx: mpsc::Receiver<Bytes>, mut writer: OwnedWriteHalf) {
+    while let Some(frame) = rx.recv().await {
+        if let Err(e) = writer.write_all(&frame).await {
+            eprintln!("piglet: write error: {e}");
+            break;
+        }
     }
 }
 
@@ -81,11 +92,15 @@ async fn read_loop(
         } else if packet_length == buffer_offset {
             let tx = {
                 let p = protocols.lock().unwrap();
-                p[&buffer[2]].clone()
+                p.get(&buffer[2]).cloned()
             };
-            // Remove the framing
-            let data = Bytes::from(buffer[6..buffer_offset].to_vec());
-            tx.send(data).await?;
+            if let Some(tx) = tx {
+                // Remove the framing
+                let data = Bytes::from(buffer[6..buffer_offset].to_vec());
+                tx.send(data).await?;
+            } else {
+                eprintln!("piglet: no receiver for protocol {}", buffer[2]);
+            }
             awaiting_length = true;
             buffer_offset = 0;
         }
@@ -100,7 +115,7 @@ async fn read_loop(
     Ok(())
 }
 
-async fn initialize(raw: &Connection) -> Result<u16, anyhow::Error> {
+async fn initialize(raw: &Connection) -> Result<(u16, mpsc::Receiver<Bytes>), anyhow::Error> {
     let protocol = 7u8;
     let mut initialize_rx = raw.register_protocol(protocol);
 
@@ -156,9 +171,45 @@ async fn initialize(raw: &Connection) -> Result<u16, anyhow::Error> {
         }
     }
 
-    initialize_rx.close();
-    raw.unregister_protocol(protocol);
-    Ok(client_id)
+    Ok((client_id, initialize_rx))
+}
+
+async fn keep_alive(
+    write_tx: mpsc::Sender<Bytes>,
+    version: u8,
+    mut receiver: mpsc::Receiver<Bytes>,
+) {
+    let mut message_id: u8 = 1;
+    let mut interval = tokio::time::interval(Duration::from_secs(30));
+    interval.tick().await; // First tick completes immediately
+    loop {
+        tokio::select! {
+            result = receiver.recv() => {
+                if result.is_none() {
+                    break;
+                }
+            }
+            _ = interval.tick() => {
+                let mut message = BytesMut::new();
+                message.put_u8(0); // version
+                message.put_u8(message_id);
+                message.put_u8(1); // fragment count
+                message.put_u8(0);
+
+                // Keep Alive fragment
+                message.put_u8(3);
+                message.put_u8(16);
+                message.put_u16_le(0);
+                message.put_u16_le(0);
+
+                let frame = frame_message(7, version, message.freeze());
+                if write_tx.try_send(frame).is_err() {
+                    break;
+                }
+                message_id = message_id.wrapping_add(1);
+            }
+        }
+    }
 }
 
 pub async fn connect<A: ToSocketAddrs>(
@@ -168,6 +219,8 @@ pub async fn connect<A: ToSocketAddrs>(
     let stream = TcpStream::connect(addr).await?;
     let (stop_tx, stop_rx) = oneshot::channel();
     let (reader, writer) = stream.into_split();
+    let (write_tx, write_rx) = mpsc::channel(100);
+    tokio::spawn(write_loop(write_rx, writer));
     let protocols = Arc::new(Mutex::new(HashMap::new()));
     let protocols_clone = protocols.clone();
     let task = tokio::spawn(async move {
@@ -179,9 +232,14 @@ pub async fn connect<A: ToSocketAddrs>(
         stop_tx,
         task,
         version,
-        writer,
+        write_tx,
     };
-    let client_id = initialize(&connection).await?;
+    let (client_id, connection_rx) = initialize(&connection).await?;
+    tokio::spawn(keep_alive(
+        connection.write_tx.clone(),
+        version,
+        connection_rx,
+    ));
     Ok(ConnectionDetails {
         connection,
         client_id,
