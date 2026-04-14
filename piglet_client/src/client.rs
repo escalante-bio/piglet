@@ -273,6 +273,11 @@ impl RequestIdGenerator {
             let v = self.i;
             self.i = self.i.wrapping_add(1);
 
+            // Hamilton reserves sequence number 0
+            if v == 0 {
+                continue;
+            }
+
             if !self.active.contains(&v) {
                 self.active.insert(v);
                 return Ok(v);
@@ -346,12 +351,23 @@ async fn read_loop(
                     let _ = bytes.get_u8(); // unknown
 
                     let mut c = channels.lock().unwrap();
-                    let channel =
-                        c.get_mut(&source).ok_or(anyhow::anyhow!("Missing source"))?;
-                    let tx = channel.active.remove(&id).ok_or(anyhow::anyhow!("Missing tx"))?;
-                    tx
-                        .send(Response { protocol, code, bytes })
-                        .or_else(|_| anyhow::bail!("Unable to send response"))?;
+                    let channel = match c.get_mut(&source) {
+                        Some(ch) => ch,
+                        None => {
+                            eprintln!("piglet: no channel for source {source}");
+                            continue;
+                        }
+                    };
+                    let tx = match channel.active.remove(&id) {
+                        Some(tx) => tx,
+                        None => {
+                            eprintln!("piglet: no pending request for id {id} from {source}");
+                            continue;
+                        }
+                    };
+                    if tx.send(Response { protocol, code, bytes }).is_err() {
+                        eprintln!("piglet: receiver dropped for id {id} from {source}");
+                    }
                 } else {
                     running = false;
                 }

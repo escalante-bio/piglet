@@ -7,9 +7,11 @@ use tokio::{
     net::tcp::{OwnedReadHalf, OwnedWriteHalf},
     net::{TcpStream, ToSocketAddrs},
     sync::{mpsc, oneshot},
+    time::Instant,
 };
 
 pub struct Connection {
+    last_tx_time: Arc<Mutex<Instant>>,
     protocols: Arc<Mutex<HashMap<u8, mpsc::Sender<Bytes>>>>,
     stop_tx: oneshot::Sender<()>,
     task: tokio::task::JoinHandle<()>,
@@ -38,6 +40,7 @@ impl Connection {
         self.write_tx
             .try_send(frame)
             .map_err(|_| anyhow::anyhow!("Write channel closed"))?;
+        *self.last_tx_time.lock().unwrap() = Instant::now();
         Ok(())
     }
 }
@@ -78,31 +81,46 @@ async fn read_loop(
     let mut packet_length = 0;
     let mut running = true;
     while running {
-        let read = match reader.try_read(&mut buffer) {
+        let read = match reader.try_read(&mut buffer[buffer_offset..]) {
             Ok(count) => count,
             _ => 0,
         };
         buffer_offset += read;
 
-        if awaiting_length {
-            if buffer_offset >= 2 {
-                awaiting_length = false;
-                packet_length = 2 + (buffer[0] as usize) + ((buffer[1] as usize) << 8);
+        loop {
+            if awaiting_length {
+                if buffer_offset >= 2 {
+                    awaiting_length = false;
+                    packet_length = 2 + (buffer[0] as usize) + ((buffer[1] as usize) << 8);
+                    if buffer.len() < packet_length {
+                        buffer.resize(packet_length, 0);
+                    }
+                } else {
+                    break;
+                }
             }
-        } else if packet_length == buffer_offset {
-            let tx = {
-                let p = protocols.lock().unwrap();
-                p.get(&buffer[2]).cloned()
-            };
-            if let Some(tx) = tx {
-                // Remove the framing
-                let data = Bytes::from(buffer[6..buffer_offset].to_vec());
-                tx.send(data).await?;
+
+            if buffer_offset >= packet_length {
+                let tx = {
+                    let p = protocols.lock().unwrap();
+                    p.get(&buffer[2]).cloned()
+                };
+                if let Some(tx) = tx {
+                    // Remove the framing
+                    let data = Bytes::from(buffer[6..packet_length].to_vec());
+                    tx.send(data).await?;
+                } else {
+                    eprintln!("piglet: no receiver for protocol {}", buffer[2]);
+                }
+                let remaining = buffer_offset - packet_length;
+                if remaining > 0 {
+                    buffer.copy_within(packet_length..buffer_offset, 0);
+                }
+                buffer_offset = remaining;
+                awaiting_length = true;
             } else {
-                eprintln!("piglet: no receiver for protocol {}", buffer[2]);
+                break;
             }
-            awaiting_length = true;
-            buffer_offset = 0;
         }
 
         tokio::select! {
@@ -175,21 +193,34 @@ async fn initialize(raw: &Connection) -> Result<(u16, mpsc::Receiver<Bytes>), an
 }
 
 async fn keep_alive(
+    last_tx_time: Arc<Mutex<Instant>>,
     write_tx: mpsc::Sender<Bytes>,
     version: u8,
     mut receiver: mpsc::Receiver<Bytes>,
 ) {
     let mut message_id: u8 = 1;
-    let mut interval = tokio::time::interval(Duration::from_secs(30));
-    interval.tick().await; // First tick completes immediately
+    let interval = Duration::from_secs(30);
     loop {
+        let sleep_duration = {
+            let elapsed = last_tx_time.lock().unwrap().elapsed();
+            if elapsed >= interval {
+                interval
+            } else {
+                interval - elapsed
+            }
+        };
+
         tokio::select! {
             result = receiver.recv() => {
                 if result.is_none() {
                     break;
                 }
             }
-            _ = interval.tick() => {
+            _ = tokio::time::sleep(sleep_duration) => {
+                if last_tx_time.lock().unwrap().elapsed() < interval {
+                    continue;
+                }
+
                 let mut message = BytesMut::new();
                 message.put_u8(0); // version
                 message.put_u8(message_id);
@@ -227,7 +258,9 @@ pub async fn connect<A: ToSocketAddrs>(
         read_loop(protocols_clone, &reader, stop_rx).await.unwrap();
     });
 
+    let last_tx_time = Arc::new(Mutex::new(Instant::now()));
     let connection = Connection {
+        last_tx_time: last_tx_time.clone(),
         protocols,
         stop_tx,
         task,
@@ -236,6 +269,7 @@ pub async fn connect<A: ToSocketAddrs>(
     };
     let (client_id, connection_rx) = initialize(&connection).await?;
     tokio::spawn(keep_alive(
+        last_tx_time,
         connection.write_tx.clone(),
         version,
         connection_rx,
